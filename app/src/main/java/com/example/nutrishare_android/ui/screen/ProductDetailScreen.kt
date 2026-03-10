@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,8 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.nutrishare_android.navigation.Screen
@@ -26,9 +26,9 @@ import java.util.Locale
 fun ProductDetailScreen(
     navController: NavController,
     productId: Long,
-    context: Context,
-    viewModel: ProductDetailViewModel = viewModel()
+    viewModel: ProductDetailViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val product by viewModel.product.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val quantity by viewModel.quantity.collectAsStateWithLifecycle()

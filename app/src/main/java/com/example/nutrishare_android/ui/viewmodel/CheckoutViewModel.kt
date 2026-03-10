@@ -5,14 +5,21 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.nutrishare_android.data.model.*
-import com.example.nutrishare_android.data.network.RetrofitClient
+import com.example.nutrishare_android.data.model.CreateOrderRequest
+import com.example.nutrishare_android.data.model.OrderItem
+import com.example.nutrishare_android.data.model.ShippingAddress
+import com.example.nutrishare_android.data.repository.NutriRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.parcelize.Parcelize
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class CheckoutViewModel(
-    private val savedStateHandle: SavedStateHandle
+@HiltViewModel
+class CheckoutViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
+    private val repository: NutriRepository
 ) : ViewModel() {
 
     private val _checkoutItems = MutableStateFlow<List<CheckoutItem>>(emptyList())
@@ -28,41 +35,38 @@ class CheckoutViewModel(
     val toastMessage: StateFlow<String?> = _toastMessage
 
     init {
-        // ⭐ 핵심: 주머니(SavedStateHandle)를 실시간으로 감시합니다.
+        // Restore checkout items from SavedStateHandle when available
         viewModelScope.launch {
             savedStateHandle.getStateFlow<List<CheckoutItem>>("checkoutItems", emptyList())
                 .collect { items ->
                     if (items.isNotEmpty()) {
-                        Log.d("CheckoutLog", "보따리 데이터 수신 완료: ${items.size}개")
+                        Log.d("CheckoutLog", "Loaded checkout items: ${items.size}")
                         _checkoutItems.value = items
                         _isLoading.value = false
                     }
                 }
         }
     }
+
     fun setCheckoutItems(items: List<CheckoutItem>) {
         _checkoutItems.value = items
         _isLoading.value = false
-        android.util.Log.d("CheckoutLog", "뷰모델 데이터 수신 완료: itemsSize ${items.size}")
+        Log.d("CheckoutLog", "Checkout items set: ${items.size}")
     }
 
-
     fun initData(productId: Long?, quantity: Int) {
-        // 1. 이미 데이터가 있다면(장바구니에서 이미 수신됨) 중복 실행 방지
         if (_checkoutItems.value.isNotEmpty()) {
             _isLoading.value = false
             return
         }
 
         if (productId != null) {
-            // 2. 단일 상품 구매인 경우 서버 조회
             loadSingleProduct(productId, quantity)
         } else {
-            // 3. 장바구니 구매인데 아직 데이터가 안 왔다면 조금 더 기다려봅니다.
             viewModelScope.launch {
-                kotlinx.coroutines.delay(1500) // 최대 1.5초 대기
+                kotlinx.coroutines.delay(1500) // wait up to 1.5s
                 if (_checkoutItems.value.isEmpty()) {
-                    Log.d("CheckoutLog", "대기 후에도 데이터가 없어 로딩을 종료합니다.")
+                    Log.d("CheckoutLog", "Checkout items missing; stop loading")
                     _isLoading.value = false
                 }
             }
@@ -73,10 +77,8 @@ class CheckoutViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = RetrofitClient.instance.getProductDetail(productId)
-                if (response.isSuccessful) {
-                    val p = response.body()?.data
-                    if (p != null) {
+                repository.getProductDetail(productId)
+                    .onSuccess { p ->
                         _checkoutItems.value = listOf(
                             CheckoutItem(
                                 productId = p.id,
@@ -86,9 +88,7 @@ class CheckoutViewModel(
                             )
                         )
                     }
-                } else {
-                    _toastMessage.value = "상품 정보를 불러오지 못했습니다."
-                }
+                    .onFailure { _toastMessage.value = "상품 정보를 불러오지 못했습니다." }
             } catch (e: Exception) {
                 _toastMessage.value = "오류 발생: ${e.message}"
             } finally {
@@ -103,7 +103,7 @@ class CheckoutViewModel(
         onSuccess: (Long) -> Unit
     ) {
         if (address.zipcode.isBlank()) {
-            _toastMessage.value = "배송지를 먼저 저장해주세요."
+            _toastMessage.value = "배송지를 먼저 입력해주세요."
             return
         }
         viewModelScope.launch {
@@ -124,13 +124,9 @@ class CheckoutViewModel(
                         )
                     }
                 )
-                val response = RetrofitClient.instance.createOrder(payload)
-                if (response.isSuccessful) {
-                    val orderId = response.body()?.data?.resourceId ?: 0L
-                    onSuccess(orderId)
-                } else {
-                    _toastMessage.value = "결제에 실패했습니다."
-                }
+                repository.createOrder(payload)
+                    .onSuccess { onSuccess(it.resourceId) }
+                    .onFailure { _toastMessage.value = "결제에 실패했습니다." }
             } catch (e: Exception) {
                 _toastMessage.value = "결제 오류: ${e.message}"
             } finally {

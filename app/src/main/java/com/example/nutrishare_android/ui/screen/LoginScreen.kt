@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -11,23 +10,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.nutrishare_android.data.local.AuthStorage
-import com.example.nutrishare_android.data.network.RetrofitClient
 import com.example.nutrishare_android.navigation.Screen
-import kotlinx.coroutines.launch
+import com.example.nutrishare_android.ui.viewmodel.LoginViewModel
 
 // frontend: LoginPage.jsx
 @Composable
-fun LoginScreen(navController: NavController, context: Context) {
-    val scope = rememberCoroutineScope()
-    val authStorage = remember { AuthStorage(context) }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+fun LoginScreen(navController: NavController) {
+    val viewModel: LoginViewModel = hiltViewModel()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
 
     // 이미 로그인된 경우 홈으로 이동
-    LaunchedEffect(Unit) {
-        if (authStorage.isAuthenticated()) {
+    LaunchedEffect(isAuthenticated) {
+        if (isAuthenticated) {
             navController.navigate(Screen.Home.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
@@ -35,31 +33,7 @@ fun LoginScreen(navController: NavController, context: Context) {
     }
 
     fun handleOAuthLogin(provider: String) {
-        scope.launch {
-            isLoading = true
-            errorMessage = null
-            try {
-                // 개발 환경: frontend와 동일하게 dev-login 엔드포인트 사용
-                val response = RetrofitClient.instance.devLogin()
-                if (response.isSuccessful) {
-                    val token = response.body()?.data
-                    if (token != null) {
-                        authStorage.setToken(token)
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
-                        }
-                    } else {
-                        errorMessage = "로그인에 실패했습니다."
-                    }
-                } else {
-                    errorMessage = "로그인에 실패했습니다."
-                }
-            } catch (e: Exception) {
-                errorMessage = "로그인 오류: ${e.message}"
-            } finally {
-                isLoading = false
-            }
-        }
+        viewModel.loginWithDev(provider)
     }
 
     Box(
@@ -81,7 +55,7 @@ fun LoginScreen(navController: NavController, context: Context) {
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "우리 동네 알뜰 식료품 공동구매",
+                text = "우리 동네 신선 식재료 공동구매",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
@@ -89,7 +63,7 @@ fun LoginScreen(navController: NavController, context: Context) {
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // 혜택 섹션
+            // 혜택 안내
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -97,12 +71,12 @@ fun LoginScreen(navController: NavController, context: Context) {
             ) {
                 Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("📦", fontSize = 24.sp)
-                        Text("대용량 마트 상품을 소분해서 알뜰하게", style = MaterialTheme.typography.bodyMedium)
+                        Text("신선", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text("대형마트 상품을 우리 동네에서 신선하게", style = MaterialTheme.typography.bodyMedium)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("🚚", fontSize = 24.sp)
-                        Text("이웃과 함께사면 배송비 0원", style = MaterialTheme.typography.bodyMedium)
+                        Text("절약", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text("배송과 유통비 절감으로 배송비 0원", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -120,7 +94,7 @@ fun LoginScreen(navController: NavController, context: Context) {
                 if (isLoading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
                 } else {
-                    Text("카카오로 3초 만에 시작하기", fontWeight = FontWeight.SemiBold)
+                    Text("카카오로 3초만에 시작하기", fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -143,7 +117,7 @@ fun LoginScreen(navController: NavController, context: Context) {
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "로그인 시 NutriShare의 이용약관 및 개인정보처리방침에 동의하게 됩니다.",
+                text = "로그인하면 NutriShare 이용약관 및 개인정보처리방침에 동의하게 됩니다.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center

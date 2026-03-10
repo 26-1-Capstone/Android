@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,8 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.nutrishare_android.data.local.AuthStorage
@@ -27,9 +27,9 @@ import java.util.Locale
 @Composable
 fun MyPageScreen(
     navController: NavController,
-    context: Context,
-    viewModel: MyPageViewModel = viewModel()
+    viewModel: MyPageViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val orders by viewModel.orders.collectAsStateWithLifecycle()
     val participations by viewModel.participations.collectAsStateWithLifecycle()

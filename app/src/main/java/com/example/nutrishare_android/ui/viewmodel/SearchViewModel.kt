@@ -3,13 +3,22 @@ package com.example.nutrishare_android.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutrishare_android.data.model.Product
-import com.example.nutrishare_android.data.network.RetrofitClient
+import com.example.nutrishare_android.data.repository.NutriRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @OptIn(FlowPreview::class)
-class SearchViewModel : ViewModel() {
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    private val repository: NutriRepository
+) : ViewModel() {
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query
@@ -20,7 +29,7 @@ class SearchViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    // frontend: query가 변경될 때 자동 검색 (useEffect + fetchSearchResults와 동일)
+    // frontend: query가 변경될 때 자동 검색
     init {
         viewModelScope.launch {
             _query
@@ -45,10 +54,9 @@ class SearchViewModel : ViewModel() {
     private suspend fun doSearch(q: String) {
         _isLoading.value = true
         try {
-            val response = RetrofitClient.instance.searchProducts(q, 50)
-            if (response.isSuccessful) {
-                _results.value = response.body()?.data?.content ?: emptyList()
-            }
+            repository.searchProducts(q, 50)
+                .onSuccess { _results.value = it.content }
+                .onFailure { _results.value = emptyList() }
         } catch (e: Exception) {
             _results.value = emptyList()
         } finally {

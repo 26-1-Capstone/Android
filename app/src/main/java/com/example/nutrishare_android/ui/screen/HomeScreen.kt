@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -11,8 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.*
@@ -22,9 +22,9 @@ import com.example.nutrishare_android.ui.viewmodel.HomeViewModel
 @Composable
 fun HomeScreen(
     navController: NavController,
-    viewModel: HomeViewModel = viewModel(),
-    context: Context = navController.context
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val products by viewModel.products.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
@@ -52,20 +52,20 @@ fun HomeScreen(
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            text = "득템 찬스!\n함께 사면 배송비 0원",
+                            text = "신선 찬스!\n배송비 0원",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "NutriShare 생필품 공동구매로\n생활비를 절약하세요.",
+                            text = "NutriShare 공동구매로\n생활비를 아껴보세요.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { navController.navigate(Screen.GroupList.route) }) {
-                            Text("특가 상품 보기")
+                            Text("인기 상품 보기")
                         }
                     }
                 }
@@ -75,7 +75,7 @@ fun HomeScreen(
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        text = "🛒 이번주 특가 공동구매",
+                        text = "이번 주 인기 공동구매",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )

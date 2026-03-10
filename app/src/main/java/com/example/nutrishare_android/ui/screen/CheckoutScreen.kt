@@ -1,16 +1,15 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.*
@@ -26,19 +25,18 @@ fun CheckoutScreen(
     navController: NavController,
     productId: Long?,
     quantity: Int,
-    context: Context,
-    viewModel: CheckoutViewModel = viewModel()
+    viewModel: CheckoutViewModel = hiltViewModel()
 ) {
-    // 1. 화면이 처음 켜질 때 딱 한 번 실행
+    val context = LocalContext.current
+    // 1. 화면이 처음 켜질 때 한 번 실행
     LaunchedEffect(Unit) {
-        // NavGraph가 성공적으로 확인했던 그 주머니에서 직접 꺼냅니다.
         val savedItems = navController.currentBackStackEntry
             ?.savedStateHandle
             ?.get<List<CheckoutItem>>("checkoutItems")
 
         if (!savedItems.isNullOrEmpty()) {
-            android.util.Log.d("CheckoutLog", "Screen에서 뷰모델로 데이터 수동 주입: ${savedItems.size}개")
-            viewModel.setCheckoutItems(savedItems) // 뷰모델에 새로 만들 함수
+            android.util.Log.d("CheckoutLog", "Screen -> ViewModel items: ${savedItems.size}")
+            viewModel.setCheckoutItems(savedItems)
         } else {
             // 상세페이지 구매인 경우 등
             viewModel.initData(productId, quantity)
@@ -61,7 +59,7 @@ fun CheckoutScreen(
         }
     }
     if (isLoading) {
-        LoadingScreen() // 혹은 CircularProgressIndicator()
+        LoadingScreen()
     } else if (checkoutItems.isEmpty()) {
         android.util.Log.d("CheckoutLog", "데이터가 비어있어서 '주문 불가' 화면 표시")
         AppScaffold(navController = navController, context = context, titleHeader = "주문/결제", showBack = true, showBottomBar = false) { innerPadding ->

@@ -3,12 +3,17 @@ package com.example.nutrishare_android.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutrishare_android.data.model.Product
-import com.example.nutrishare_android.data.network.RetrofitClient
+import com.example.nutrishare_android.data.repository.NutriRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class HomeViewModel : ViewModel() {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val repository: NutriRepository
+) : ViewModel() {
 
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products
@@ -22,12 +27,11 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = RetrofitClient.instance.getProducts(size = 10)
-                if (response.isSuccessful) {
-                    _products.value = response.body()?.data?.content ?: emptyList()
-                }
+                repository.getProducts(size = 10)
+                    .onSuccess { _products.value = it.content }
+                    .onFailure { _products.value = emptyList() }
             } catch (e: Exception) {
-                // 네트워크 오류 무시
+                // ignore
             } finally {
                 _isLoading.value = false
             }

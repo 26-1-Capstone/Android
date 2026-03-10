@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,8 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.*
@@ -21,9 +21,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun GroupCreateScreen(
     navController: NavController,
-    context: Context = navController.context,
-    viewModel: GroupCreateViewModel = viewModel()
+    viewModel: GroupCreateViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
     val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
 

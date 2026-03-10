@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,8 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.nutrishare_android.navigation.Screen
@@ -27,9 +27,9 @@ import java.util.Locale
 @Composable
 fun CartScreen(
     navController: NavController,
-    context: Context = navController.context,
-    viewModel: CartViewModel = viewModel()
+    viewModel: CartViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
     val totalAmount by viewModel.totalAmount.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
@@ -62,7 +62,7 @@ fun CartScreen(
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text(item.productName, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                                         IconButton(onClick = { showDeleteDialog = item.productId }, modifier = Modifier.size(24.dp)) {
-                                            Text("✕", style = MaterialTheme.typography.bodySmall)
+                                            Text("삭제", style = MaterialTheme.typography.bodySmall)
                                         }
                                     }
                                     Text("${NumberFormat.getNumberInstance(Locale.KOREA).format(item.typePrice)}원", style = MaterialTheme.typography.bodySmall)
@@ -107,14 +107,13 @@ fun CartScreen(
                                     )
                                 }
 
-                                // 1. 먼저 페이지를 이동시킵니다.
+                                // 1. 화면 이동
                                 navController.navigate(Screen.Checkout.route)
 
-                                // 2. 이동 직후 '지금 내 눈앞에 있는 화면(Checkout)'의 주머니를 바로 엽니다.
-                                // 이것이 가장 확실한 '직배송' 방법입니다.
+                                // 2. 이동 직후 Checkout 화면에 전달
                                 navController.currentBackStackEntry?.savedStateHandle?.set("checkoutItems", itemsToOrder)
 
-                                android.util.Log.d("CheckoutLog", "Checkout(현재 화면) 주머니에 데이터 직배송 완료: ${itemsToOrder.size}개")
+                                android.util.Log.d("CheckoutLog", "Checkout saved items: ${itemsToOrder.size}")
                             },
                             modifier = Modifier.fillMaxWidth().height(52.dp)
                         ) {
@@ -126,7 +125,7 @@ fun CartScreen(
         }
     }
 
-    // 삭제 확인 다이얼로그 (frontend: window.confirm과 동일)
+    // 삭제 확인 다이얼로그
     showDeleteDialog?.let { productId ->
         AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
