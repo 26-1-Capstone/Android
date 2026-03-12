@@ -15,6 +15,7 @@ import com.example.nutrishare_android.ui.screen.*
 fun NavGraph(navController: NavHostController, context: Context) {
     val authStorage = AuthStorage(context)
     val startDestination = if (authStorage.isAuthenticated()) Screen.Home.route else Screen.Login.route
+    val hello: String = "hello"
 
     NavHost(navController = navController, startDestination = startDestination) {
 
