@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -11,8 +10,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.*
@@ -22,9 +22,9 @@ import com.example.nutrishare_android.ui.viewmodel.GroupListViewModel
 @Composable
 fun GroupListScreen(
     navController: NavController,
-    context: Context = navController.context,
-    viewModel: GroupListViewModel = viewModel()
+    viewModel: GroupListViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val groups by viewModel.groups.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()

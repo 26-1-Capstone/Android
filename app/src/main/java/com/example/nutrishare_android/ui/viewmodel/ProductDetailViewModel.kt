@@ -2,12 +2,19 @@ package com.example.nutrishare_android.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.nutrishare_android.data.model.AddToCartRequest
 import com.example.nutrishare_android.data.model.Product
-import com.example.nutrishare_android.data.network.RetrofitClient
-import kotlinx.coroutines.flow.*
+import com.example.nutrishare_android.data.repository.NutriRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ProductDetailViewModel : ViewModel() {
+@HiltViewModel
+class ProductDetailViewModel @Inject constructor(
+    private val repository: NutriRepository
+) : ViewModel() {
 
     private val _product = MutableStateFlow<Product?>(null)
     val product: StateFlow<Product?> = _product
@@ -25,8 +32,9 @@ class ProductDetailViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = RetrofitClient.instance.getProductDetail(id)
-                if (response.isSuccessful) _product.value = response.body()?.data
+                repository.getProductDetail(id)
+                    .onSuccess { _product.value = it }
+                    .onFailure { _product.value = null }
             } catch (e: Exception) { /* ignore */ } finally { _isLoading.value = false }
         }
     }
@@ -37,12 +45,13 @@ class ProductDetailViewModel : ViewModel() {
         val product = _product.value ?: return
         viewModelScope.launch {
             try {
-                val request = com.example.nutrishare_android.data.model.AddToCartRequest(product.id, _quantity.value)
-                val response = RetrofitClient.instance.addToCart(request)
-                if (response.isSuccessful) {
-                    _toastMessage.value = "장바구니에 ${_quantity.value}개 담았습니다."
-                    onSuccess()
-                }
+                val request = AddToCartRequest(product.id, _quantity.value)
+                repository.addToCart(request)
+                    .onSuccess {
+                        _toastMessage.value = "장바구니에 ${_quantity.value}개 담았습니다."
+                        onSuccess()
+                    }
+                    .onFailure { _toastMessage.value = "장바구니 담기에 실패했습니다." }
             } catch (e: Exception) { _toastMessage.value = "장바구니 담기에 실패했습니다." }
         }
     }

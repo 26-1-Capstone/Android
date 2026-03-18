@@ -5,11 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.nutrishare_android.data.model.Order
 import com.example.nutrishare_android.data.model.Participation
 import com.example.nutrishare_android.data.model.User
-import com.example.nutrishare_android.data.network.RetrofitClient
-import kotlinx.coroutines.flow.*
+import com.example.nutrishare_android.data.repository.NutriRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MyPageViewModel : ViewModel() {
+@HiltViewModel
+class MyPageViewModel @Inject constructor(
+    private val repository: NutriRepository
+) : ViewModel() {
     private val _profile = MutableStateFlow<User?>(null)
     val profile: StateFlow<User?> = _profile
 
@@ -28,15 +34,14 @@ class MyPageViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // frontend: Promise.all과 동일하게 병렬 호출
-                val profileJob = launch { 
-                    RetrofitClient.instance.getMyProfile().body()?.data?.let { _profile.value = it }
+                val profileJob = launch {
+                    repository.getMyProfile().onSuccess { _profile.value = it }
                 }
                 val ordersJob = launch {
-                    RetrofitClient.instance.getMyOrders().body()?.data?.let { _orders.value = it }
+                    repository.getMyOrders().onSuccess { _orders.value = it }
                 }
                 val partJob = launch {
-                    RetrofitClient.instance.getMyParticipations().body()?.data?.let { _participations.value = it }
+                    repository.getMyParticipations().onSuccess { _participations.value = it }
                 }
                 profileJob.join(); ordersJob.join(); partJob.join()
             } catch (e: Exception) { /* ignore */ } finally { _isLoading.value = false }
@@ -44,7 +49,10 @@ class MyPageViewModel : ViewModel() {
     }
 }
 
-class ProfileEditViewModel : ViewModel() {
+@HiltViewModel
+class ProfileEditViewModel @Inject constructor(
+    private val repository: NutriRepository
+) : ViewModel() {
     private val _profile = MutableStateFlow<User?>(null)
     val profile: StateFlow<User?> = _profile
 
@@ -63,8 +71,8 @@ class ProfileEditViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val res = RetrofitClient.instance.getMyProfile()
-                if (res.isSuccessful) _profile.value = res.body()?.data
+                repository.getMyProfile()
+                    .onSuccess { _profile.value = it }
             } catch (e: Exception) { /* ignore */ } finally { _isLoading.value = false }
         }
     }
@@ -79,11 +87,12 @@ class ProfileEditViewModel : ViewModel() {
                     addressLine1 = address.basicAddress,
                     addressLine2 = address.detailAddress
                 )
-                val res = RetrofitClient.instance.updateMyProfile(req)
-                if (res.isSuccessful) {
-                    _toastMessage.value = "프로필이 성공적으로 수정되었습니다."
-                    onSuccess()
-                }
+                repository.updateMyProfile(req)
+                    .onSuccess {
+                        _toastMessage.value = "프로필이 성공적으로 수정되었습니다."
+                        onSuccess()
+                    }
+                    .onFailure { _toastMessage.value = "저장에 실패했습니다." }
             } catch (e: Exception) {
                 _toastMessage.value = "저장 실패: ${e.message}"
             } finally { _isSaving.value = false }

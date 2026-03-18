@@ -1,27 +1,27 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.nutrishare_android.navigation.Screen
-import com.example.nutrishare_android.ui.components.*
+import com.example.nutrishare_android.ui.components.AppScaffold
 
 // frontend: OrderCompletePage.jsx
 @Composable
 fun OrderCompleteScreen(
     navController: NavController,
-    orderId: Long,
-    context: Context = navController.context
+    orderId: Long
 ) {
+    val context = LocalContext.current
     AppScaffold(navController = navController, context = context, showSearch = false, showCart = false, showBottomBar = true) { innerPadding ->
         Column(
             modifier = Modifier
@@ -38,7 +38,7 @@ fun OrderCompleteScreen(
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Text("✅", style = MaterialTheme.typography.displayMedium)
+                    Text("OK", style = MaterialTheme.typography.displayMedium)
                 }
             }
 

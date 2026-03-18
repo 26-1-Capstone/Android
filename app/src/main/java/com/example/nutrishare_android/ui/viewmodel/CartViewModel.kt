@@ -4,11 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutrishare_android.data.model.CartItem
 import com.example.nutrishare_android.data.model.UpdateCartRequest
-import com.example.nutrishare_android.data.network.RetrofitClient
-import kotlinx.coroutines.flow.*
+import com.example.nutrishare_android.data.repository.NutriRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class CartViewModel : ViewModel() {
+@HiltViewModel
+class CartViewModel @Inject constructor(
+    private val repository: NutriRepository
+) : ViewModel() {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     val cartItems: StateFlow<List<CartItem>> = _cartItems
 
@@ -24,20 +30,25 @@ class CartViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = RetrofitClient.instance.getCart()
-                if (response.isSuccessful) {
-                    val data = response.body()?.data
-                    _cartItems.value = data?.items ?: emptyList()
-                    _totalAmount.value = data?.totalAmount ?: 0L
-                }
-            } catch (e: Exception) { /* ignore */ } finally { _isLoading.value = false }
+                repository.getCart()
+                    .onSuccess { data ->
+                        _cartItems.value = data.items
+                        _totalAmount.value = data.totalAmount
+                    }
+                    .onFailure {
+                        _cartItems.value = emptyList()
+                        _totalAmount.value = 0L
+                    }
+            } catch (e: Exception) {
+                // ignore
+            } finally { _isLoading.value = false }
         }
     }
 
     fun updateQuantity(productId: Long, newQty: Int) {
         viewModelScope.launch {
             try {
-                RetrofitClient.instance.updateCartItem(productId, UpdateCartRequest(newQty))
+                repository.updateCartItem(productId, UpdateCartRequest(newQty))
                 fetchCart()
             } catch (e: Exception) { /* ignore */ }
         }
@@ -46,7 +57,7 @@ class CartViewModel : ViewModel() {
     fun removeItem(productId: Long) {
         viewModelScope.launch {
             try {
-                RetrofitClient.instance.removeCartItem(productId)
+                repository.removeCartItem(productId)
                 fetchCart()
             } catch (e: Exception) { /* ignore */ }
         }

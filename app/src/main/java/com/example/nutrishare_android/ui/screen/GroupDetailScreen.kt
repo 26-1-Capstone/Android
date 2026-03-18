@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,8 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.*
@@ -26,9 +26,9 @@ import java.util.Locale
 fun GroupDetailScreen(
     navController: NavController,
     groupId: Long,
-    context: Context = navController.context,
-    viewModel: GroupDetailViewModel = viewModel()
+    viewModel: GroupDetailViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val group by viewModel.group.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isParticipating by viewModel.isParticipating.collectAsStateWithLifecycle()
@@ -64,12 +64,22 @@ fun GroupDetailScreen(
                     enabled = !isFull && !isParticipating,
                     colors = if (isParticipating) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer) else ButtonDefaults.buttonColors()
                 ) {
-                    Text(when { isParticipating -> "참여 완료"; isFull -> "모집 마감"; else -> "공동구매 참여하기" }, fontWeight = FontWeight.Bold)
+                    Text(
+                        when {
+                            isParticipating -> "참여 완료"
+                            isFull -> "모집 마감"
+                            else -> "공동구매 참여하기"
+                        },
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
     ) { innerPadding ->
-        Column(Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Column(
+            Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState()).padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
             // 헤더
             Column {
                 Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(6.dp)) {
@@ -82,7 +92,7 @@ fun GroupDetailScreen(
             // 상품 정보 박스
             Card {
                 Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("📦", fontSize = 40.sp)
+                    Text("상품", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Column {
                         Text(g.productName, fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -113,17 +123,17 @@ fun GroupDetailScreen(
                         }
                     }
                     NutriProgressBar(g.currentQuantity, g.targetQuantity)
-                    Text("목표 인원이 모두 모여야 할인된 가격으로 결제 및 배송이 시작됩니다.", style = MaterialTheme.typography.bodySmall)
+                    Text("목표 인원이 모두 모이면 할인된 가격으로 결제 및 배송이 진행됩니다.", style = MaterialTheme.typography.bodySmall)
                 }
             }
 
-            // 주최자 정보
+            // 주최자 안내
             Card {
                 Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("👩", fontSize = 32.sp)
+                    Text("안내", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Column {
-                        Text("주최자: 이웃집요리사", fontWeight = FontWeight.SemiBold)
-                        Text("\"라면 너무 많아서 같이 나누실 분 구해요~\"", style = MaterialTheme.typography.bodySmall)
+                        Text("주최자 안내", fontWeight = FontWeight.SemiBold)
+                        Text("\"함께 사면 더 저렴하게 나눌 수 있어요.\"", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

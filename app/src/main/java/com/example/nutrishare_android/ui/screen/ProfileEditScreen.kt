@@ -1,6 +1,5 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,8 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.nutrishare_android.ui.components.*
 import com.example.nutrishare_android.ui.viewmodel.ProfileEditViewModel
@@ -19,9 +19,9 @@ import com.example.nutrishare_android.ui.viewmodel.ProfileEditViewModel
 @Composable
 fun ProfileEditScreen(
     navController: NavController,
-    context: Context = navController.context,
-    viewModel: ProfileEditViewModel = viewModel()
+    viewModel: ProfileEditViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
