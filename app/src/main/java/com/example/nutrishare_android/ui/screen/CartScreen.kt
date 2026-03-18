@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.nutrishare_android.navigation.Screen
+import com.example.nutrishare_android.navigation.navigateToTopLevel
 import com.example.nutrishare_android.ui.components.*
 import com.example.nutrishare_android.ui.viewmodel.CartViewModel
 import com.example.nutrishare_android.ui.viewmodel.CheckoutItem
@@ -40,7 +41,7 @@ fun CartScreen(
 
         if (cartItems.isEmpty()) {
             EmptyState(title = "장바구니가 비어있습니다", actionLabel = "쇼핑하러 가기") {
-                navController.navigate(Screen.Home.route)
+                navController.navigateToTopLevel(Screen.Home.route)
             }
         } else {
             Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {

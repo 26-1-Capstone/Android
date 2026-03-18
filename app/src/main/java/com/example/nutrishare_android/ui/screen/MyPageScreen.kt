@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,7 +49,10 @@ fun MyPageScreen(
         ) {
             // 프로필 헤더
             item {
-                Card {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = ButtonDefaults.outlinedButtonBorder
+                ) {
                     Column(Modifier.padding(20.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             AsyncImage(
@@ -76,7 +80,20 @@ fun MyPageScreen(
 
             // 탭 전환
             item {
-                TabRow(selectedTabIndex = if (activeTab == "orders") 0 else 1) {
+                TabRow(
+                    selectedTabIndex = if (activeTab == "orders") 0 else 1,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    divider = {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
+                    },
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[if (activeTab == "orders") 0 else 1]),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                ) {
                     Tab(selected = activeTab == "orders", onClick = { activeTab = "orders" }) {
                         Text("주문 내역", modifier = Modifier.padding(vertical = 12.dp))
                     }
@@ -92,7 +109,10 @@ fun MyPageScreen(
                     item { Text("주문 내역이 없습니다.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
                 } else {
                     items(orders) { order ->
-                        Card {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = ButtonDefaults.outlinedButtonBorder
+                        ) {
                             Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                                     val displayDate = order.orderDate?.substringBefore("T") ?: "날짜 없음"
@@ -119,7 +139,11 @@ fun MyPageScreen(
                     item { Text("참여 내역이 없습니다.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
                 } else {
                     items(participations) { group ->
-                        Card(onClick = { navController.navigate(Screen.GroupDetail.createRoute(group.groupPurchaseId)) }) {
+                        Card(
+                            onClick = { navController.navigate(Screen.GroupDetail.createRoute(group.groupPurchaseId)) },
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = ButtonDefaults.outlinedButtonBorder
+                        ) {
                             Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                                     Text(group.title?: "", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))

@@ -1,7 +1,6 @@
 package com.example.nutrishare_android.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -16,13 +15,27 @@ private val NutriShareColorScheme = lightColorScheme(
     primaryContainer = NutriGreenContainer,
     onPrimaryContainer = NutriGreenDark,
     secondary = NutriOrange,
-    onSecondary = SurfaceWhite,
+    onSecondary = TextPrimary,
+    secondaryContainer = NutriOrangeContainer,
+    onSecondaryContainer = TextPrimary,
+    tertiary = NutriGreenLight,
+    onTertiary = TextPrimary,
+    tertiaryContainer = NutriAccentSoft,
+    onTertiaryContainer = TextPrimary,
     error = NutriError,
     background = BackgroundLight,
     surface = SurfaceWhite,
+    surfaceBright = SurfaceWhite,
+    surfaceContainer = SurfaceMuted,
+    surfaceContainerHigh = SurfaceMuted,
+    surfaceContainerHighest = NutriAccentSoft,
+    surfaceVariant = SurfaceMuted,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
-    outline = DividerColor
+    onSurfaceVariant = TextSecondary,
+    outline = DividerColor,
+    outlineVariant = DividerColor,
+    surfaceTint = NutriGreen
 )
 
 @Composable
@@ -33,8 +46,8 @@ fun Nutrishare_androidTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = NutriGreen.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            window.statusBarColor = SurfaceWhite.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
         }
     }
 

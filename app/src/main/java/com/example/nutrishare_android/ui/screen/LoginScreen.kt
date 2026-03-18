@@ -88,7 +88,10 @@ fun LoginScreen(navController: NavController) {
                 onClick = { handleOAuthLogin("kakao") },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
+                ),
                 enabled = !isLoading
             ) {
                 if (isLoading) {

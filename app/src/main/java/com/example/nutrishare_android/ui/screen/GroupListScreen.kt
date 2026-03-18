@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -82,7 +84,11 @@ fun GroupListScreen(
                     .padding(end = 16.dp, bottom = 16.dp),
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Text("+", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimary)
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "모집글 작성",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     }

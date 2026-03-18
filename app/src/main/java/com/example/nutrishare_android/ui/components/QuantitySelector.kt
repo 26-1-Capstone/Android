@@ -1,11 +1,15 @@
-package com.example.nutrishare_android.ui.components
+﻿package com.example.nutrishare_android.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 // frontend: QuantitySelector.jsx
@@ -26,14 +30,17 @@ fun QuantitySelector(
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier.size(36.dp)
         ) {
-            Text("−", fontWeight = FontWeight.Bold)
+            Icon(
+                imageVector = Icons.Filled.Remove,
+                contentDescription = "수량 줄이기"
+            )
         }
         Text(
             text = value.toString(),
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.widthIn(min = 32.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
         FilledTonalButton(
             onClick = { if (value < max) onValueChange(value + 1) },
@@ -41,7 +48,10 @@ fun QuantitySelector(
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier.size(36.dp)
         ) {
-            Text("+", fontWeight = FontWeight.Bold)
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = "수량 늘리기"
+            )
         }
     }
 }

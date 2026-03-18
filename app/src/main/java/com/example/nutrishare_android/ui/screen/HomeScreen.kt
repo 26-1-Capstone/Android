@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.nutrishare_android.navigation.navigateToTopLevel
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.*
 import com.example.nutrishare_android.ui.viewmodel.HomeViewModel
@@ -64,7 +65,7 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { navController.navigate(Screen.GroupList.route) }) {
+                        Button(onClick = { navController.navigateToTopLevel(Screen.GroupList.route) }) {
                             Text("인기 상품 보기")
                         }
                     }

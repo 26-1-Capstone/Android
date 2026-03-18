@@ -3,6 +3,8 @@ package com.example.nutrishare_android.ui.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.nutrishare_android.navigation.Screen
+import com.example.nutrishare_android.navigation.navigateToTopLevel
 import com.example.nutrishare_android.ui.components.AppScaffold
 
 // frontend: OrderCompletePage.jsx
@@ -38,7 +41,12 @@ fun OrderCompleteScreen(
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Text("OK", style = MaterialTheme.typography.displayMedium)
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = "완료",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp)
+                    )
                 }
             }
 
@@ -53,11 +61,11 @@ fun OrderCompleteScreen(
             )
             Spacer(Modifier.height(40.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = { navController.navigate(Screen.MyPage.route) }) {
+                OutlinedButton(onClick = { navController.navigateToTopLevel(Screen.MyPage.route) }) {
                     Text("주문 내역 보기")
                 }
                 Button(onClick = {
-                    navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } }
+                    navController.navigateToTopLevel(Screen.Home.route)
                 }) {
                     Text("쇼핑 계속하기")
                 }
