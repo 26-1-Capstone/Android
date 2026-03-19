@@ -1,5 +1,6 @@
 package com.example.nutrishare_android.data.repository
 
+import com.example.nutrishare_android.data.model.Address
 import com.example.nutrishare_android.data.model.CartItem
 import com.example.nutrishare_android.data.model.CartResponse
 import com.example.nutrishare_android.data.model.Group
@@ -9,13 +10,12 @@ import com.example.nutrishare_android.data.model.Participation
 import com.example.nutrishare_android.data.model.Product
 import com.example.nutrishare_android.data.model.ResourceIdResponse
 import com.example.nutrishare_android.data.model.User
-import com.example.nutrishare_android.data.model.Address
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
 object MockDataConfig {
-    @Volatile var forceMock: Boolean = true
+    @Volatile var forceMock: Boolean = false
     @Volatile var fallbackToMockOnError: Boolean = true
 }
 
@@ -30,7 +30,7 @@ object MockData {
             imageUrl = null,
             categoryName = "축산",
             stockQuantity = 50,
-            description = "신선한 유기농 계란"
+            description = "신선한 유기농 계란입니다."
         ),
         Product(
             id = 2L,
@@ -39,7 +39,7 @@ object MockData {
             imageUrl = null,
             categoryName = "과일",
             stockQuantity = 30,
-            description = "달콤한 제철 딸기"
+            description = "달콤한 제철 딸기입니다."
         ),
         Product(
             id = 3L,
@@ -48,7 +48,7 @@ object MockData {
             imageUrl = null,
             categoryName = "정육",
             stockQuantity = 20,
-            description = "부드러운 한우 불고기"
+            description = "부드러운 한우 불고기입니다."
         ),
         Product(
             id = 4L,
@@ -57,7 +57,7 @@ object MockData {
             imageUrl = null,
             categoryName = "유제품",
             stockQuantity = 40,
-            description = "단백질 가득"
+            description = "담백한 그릭 요거트입니다."
         )
     )
 
@@ -82,6 +82,11 @@ object MockData {
             dueDate = LocalDateTime.now().minusDays(1).format(dateTimeFmt),
             status = "CLOSED"
         )
+    )
+
+    private val cartItems = mutableListOf(
+        CartItem(productId = 1L, productName = "유기농 계란 10구", typePrice = 6900, quantity = 1, totalPrice = 6900),
+        CartItem(productId = 2L, productName = "제철 딸기 500g", typePrice = 9900, quantity = 2, totalPrice = 19800)
     )
 
     fun productsPage(size: Int, page: Int): Result<PageResponse<Product>> {
@@ -118,12 +123,56 @@ object MockData {
     }
 
     fun cart(): Result<CartResponse> {
-        val items = listOf(
-            CartItem(productId = 1L, productName = "유기농 계란 10구", typePrice = 6900, quantity = 1, totalPrice = 6900),
-            CartItem(productId = 2L, productName = "제철 딸기 500g", typePrice = 9900, quantity = 2, totalPrice = 19800)
-        )
+        val items = cartItems.map { it.copy() }
         val total = items.sumOf { it.totalPrice }
         return Result.success(CartResponse(items = items, totalAmount = total))
+    }
+
+    fun addToCart(productId: Long, quantity: Int): Result<Unit> {
+        val product = products.find { it.id == productId }
+            ?: return Result.failure(IllegalArgumentException("Product not found: $productId"))
+
+        val existingIndex = cartItems.indexOfFirst { it.productId == productId }
+        if (existingIndex >= 0) {
+            val existingItem = cartItems[existingIndex]
+            val nextQuantity = existingItem.quantity + quantity
+            cartItems[existingIndex] = existingItem.copy(
+                quantity = nextQuantity,
+                totalPrice = existingItem.typePrice * nextQuantity
+            )
+        } else {
+            cartItems += CartItem(
+                productId = product.id,
+                productName = product.name,
+                typePrice = product.price,
+                quantity = quantity,
+                totalPrice = product.price * quantity
+            )
+        }
+        return Result.success(Unit)
+    }
+
+    fun updateCartItem(productId: Long, quantity: Int): Result<Unit> {
+        val existingIndex = cartItems.indexOfFirst { it.productId == productId }
+        if (existingIndex < 0) {
+            return Result.failure(IllegalArgumentException("Cart item not found: $productId"))
+        }
+
+        if (quantity <= 0) {
+            cartItems.removeAt(existingIndex)
+        } else {
+            val existingItem = cartItems[existingIndex]
+            cartItems[existingIndex] = existingItem.copy(
+                quantity = quantity,
+                totalPrice = existingItem.typePrice * quantity
+            )
+        }
+        return Result.success(Unit)
+    }
+
+    fun removeCartItem(productId: Long): Result<Unit> {
+        cartItems.removeAll { it.productId == productId }
+        return Result.success(Unit)
     }
 
     fun orderCreated(): Result<ResourceIdResponse> {
@@ -157,7 +206,7 @@ object MockData {
                 address = Address(
                     zipCode = "06236",
                     addressLine1 = "서울 강남구 테헤란로 123",
-                    addressLine2 = "101호"
+                    addressLine2 = "101동 1001호"
                 )
             )
         )

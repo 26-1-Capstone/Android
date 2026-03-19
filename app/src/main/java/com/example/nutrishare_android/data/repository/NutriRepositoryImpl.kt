@@ -72,7 +72,7 @@ class NutriRepositoryImpl @Inject constructor(
 
     override suspend fun addToCart(request: AddToCartRequest): Result<Unit> {
         return withMock(
-            mock = { MockData.unit() },
+            mock = { MockData.addToCart(request.productId, request.quantity) },
             apiCall = { api.addToCart(request).toUnitResult() }
         )
     }
@@ -82,14 +82,14 @@ class NutriRepositoryImpl @Inject constructor(
         request: UpdateCartRequest
     ): Result<Unit> {
         return withMock(
-            mock = { MockData.unit() },
+            mock = { MockData.updateCartItem(productId, request.quantity) },
             apiCall = { api.updateCartItem(productId, request).toUnitResult() }
         )
     }
 
     override suspend fun removeCartItem(productId: Long): Result<Unit> {
         return withMock(
-            mock = { MockData.unit() },
+            mock = { MockData.removeCartItem(productId) },
             apiCall = { api.removeCartItem(productId).toUnitResult() }
         )
     }
