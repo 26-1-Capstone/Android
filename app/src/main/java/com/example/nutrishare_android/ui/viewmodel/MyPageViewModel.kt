@@ -30,6 +30,10 @@ class MyPageViewModel @Inject constructor(
 
     init { fetchAll() }
 
+    fun refreshOnStart() {
+        fetchAll()
+    }
+
     fun fetchAll() {
         viewModelScope.launch {
             _isLoading.value = true

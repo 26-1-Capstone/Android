@@ -98,7 +98,7 @@ class NutriRepositoryImpl @Inject constructor(
         request: CreateOrderRequest
     ): Result<ResourceIdResponse> {
         return withMock(
-            mock = { MockData.orderCreated() },
+            mock = { MockData.orderCreated(request) },
             apiCall = { api.createOrder(request).toResult() }
         )
     }
@@ -147,7 +147,7 @@ class NutriRepositoryImpl @Inject constructor(
 
     override suspend fun getMyOrders(): Result<List<Order>> {
         return withMock(
-            mock = { MockData.myOrders() },
+            mock = { MockData.currentMyOrders() },
             apiCall = { api.getMyOrders().toResult() }
         )
     }
