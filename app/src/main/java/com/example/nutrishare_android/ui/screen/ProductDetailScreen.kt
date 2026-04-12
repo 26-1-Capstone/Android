@@ -7,14 +7,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.*
 import com.example.nutrishare_android.ui.viewmodel.ProductDetailViewModel
@@ -102,11 +101,11 @@ fun ProductDetailScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // 상품 이미지
-            AsyncImage(
-                model = p.imageUrl ?: "https://via.placeholder.com/400x400",
+            ProductImage(
+                imageUrl = p.imageUrl,
                 contentDescription = p.name,
                 modifier = Modifier.fillMaxWidth().height(280.dp),
-                contentScale = ContentScale.Crop
+                shape = RectangleShape
             )
             Column(modifier = Modifier.padding(20.dp)) {
                 p.categoryName?.let { Text(text = it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }

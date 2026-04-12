@@ -66,7 +66,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { navController.navigateToTopLevel(Screen.GroupList.route) }) {
-                            Text("인기 상품 보기")
+                            Text("공동구매 바로가기")
                         }
                     }
                 }

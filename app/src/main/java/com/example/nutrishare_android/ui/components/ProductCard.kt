@@ -7,12 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.example.nutrishare_android.data.model.Product
 import java.text.NumberFormat
 import java.util.Locale
@@ -30,14 +27,13 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
     ) {
         Column {
             Box {
-                AsyncImage(
-                    model = product.imageUrl ?: "https://via.placeholder.com/300x300?text=No+Image",
+                ProductImage(
+                    imageUrl = product.imageUrl,
                     contentDescription = product.name,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-                    contentScale = ContentScale.Crop
+                        .height(160.dp),
+                    shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
                 )
                 product.categoryName?.let { category ->
                     Surface(
