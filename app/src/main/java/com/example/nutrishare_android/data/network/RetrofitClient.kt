@@ -18,7 +18,7 @@ object RetrofitClient {
     // baseURL은 frontend와 동일하게 /api/v1 경로 기준
     // 에뮬레이터에서 로컬 서버 접근 시 10.0.2.2 사용
     // 실기기나 실서버 사용 시 실제 도메인으로 교체
-    private const val BASE_URL = "http://10.0.2.2:8080/api/v1/"
+    private const val BASE_URL = "http://3.36.139.67/api/v1/"
 
     private lateinit var authStorage: AuthStorage
     private var isRefreshing = false

@@ -16,10 +16,11 @@ fun EmptyState(
     title: String,
     description: String? = null,
     actionLabel: String? = null,
-    onAction: (() -> Unit)? = null
+    onAction: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -25,10 +25,6 @@ class LoginViewModel @Inject constructor(
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated
 
-    init {
-        _isAuthenticated.value = authStorage.isAuthenticated()
-    }
-
     fun loginWithDev(provider: String) {
         // provider is reserved for future OAuth implementation
         viewModelScope.launch {

@@ -1,25 +1,41 @@
 package com.example.nutrishare_android.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.nutrishare_android.ui.screen.*
+import com.example.nutrishare_android.data.local.AuthStorage
+import com.example.nutrishare_android.ui.components.LoadingScreen
+import com.example.nutrishare_android.ui.screen.CartScreen
+import com.example.nutrishare_android.ui.screen.CheckoutScreen
+import com.example.nutrishare_android.ui.screen.GroupCreateScreen
+import com.example.nutrishare_android.ui.screen.GroupDetailScreen
+import com.example.nutrishare_android.ui.screen.GroupListScreen
+import com.example.nutrishare_android.ui.screen.HomeScreen
+import com.example.nutrishare_android.ui.screen.LoginScreen
+import com.example.nutrishare_android.ui.screen.MyPageScreen
+import com.example.nutrishare_android.ui.screen.OrderCompleteScreen
+import com.example.nutrishare_android.ui.screen.ProductDetailScreen
+import com.example.nutrishare_android.ui.screen.ProfileEditScreen
+import com.example.nutrishare_android.ui.screen.SearchScreen
+import com.example.nutrishare_android.ui.viewmodel.CheckoutItem
 
-// frontend App.jsx의 <Routes> 구조를 NavHost로 구성
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String) {
     NavHost(navController = navController, startDestination = startDestination) {
-
-        // 공개 라우트
         composable(Screen.Login.route) {
             LoginScreen(navController = navController)
         }
         composable(Screen.Home.route) {
-            HomeScreen(navController = navController)
+            RequireAuthentication(navController = navController) {
+                HomeScreen(navController = navController)
+            }
         }
         composable(Screen.Search.route) {
             SearchScreen(navController = navController)
@@ -28,7 +44,6 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             GroupListScreen(navController = navController)
         }
 
-        // /products/:id
         composable(
             route = Screen.ProductDetail.route,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
@@ -37,7 +52,6 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             ProductDetailScreen(navController = navController, productId = id)
         }
 
-        // /groups/:id
         composable(
             route = Screen.GroupDetail.route,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
@@ -46,9 +60,10 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             GroupDetailScreen(navController = navController, groupId = id)
         }
 
-        // 인증 필요 라우트 (isAuthenticated 체크는 Screen에서 처리)
         composable(Screen.Cart.route) {
-            CartScreen(navController = navController)
+            RequireAuthentication(navController = navController) {
+                CartScreen(navController = navController)
+            }
         }
         composable(
             route = Screen.Checkout.route,
@@ -60,32 +75,37 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             val productId = backStackEntry.arguments?.getLong("productId") ?: -1L
             val quantity = backStackEntry.arguments?.getInt("quantity") ?: 1
 
-            // checkoutItems 상태 확인 (디버그용)
-            val itemsInHandle = backStackEntry.savedStateHandle
-                .get<List<com.example.nutrishare_android.ui.viewmodel.CheckoutItem>>("checkoutItems")
+            val itemsInHandle = backStackEntry.savedStateHandle.get<List<CheckoutItem>>("checkoutItems")
             android.util.Log.d(
                 "CheckoutLog",
                 "NavGraph checkoutItems size: ${itemsInHandle?.size ?: "null"}"
             )
 
-            CheckoutScreen(
-                navController = navController,
-                productId = if (productId == -1L) null else productId,
-                quantity = quantity,
-                viewModel = hiltViewModel(backStackEntry)
-            )
+            RequireAuthentication(navController = navController) {
+                CheckoutScreen(
+                    navController = navController,
+                    productId = if (productId == -1L) null else productId,
+                    quantity = quantity,
+                    viewModel = hiltViewModel(backStackEntry)
+                )
+            }
         }
         composable(Screen.MyPage.route) {
-            MyPageScreen(navController = navController)
+            RequireAuthentication(navController = navController) {
+                MyPageScreen(navController = navController)
+            }
         }
         composable(Screen.ProfileEdit.route) {
-            ProfileEditScreen(navController = navController)
+            RequireAuthentication(navController = navController) {
+                ProfileEditScreen(navController = navController)
+            }
         }
         composable(Screen.GroupCreate.route) {
-            GroupCreateScreen(navController = navController)
+            RequireAuthentication(navController = navController) {
+                GroupCreateScreen(navController = navController)
+            }
         }
 
-        // /orders/:id/complete
         composable(
             route = Screen.OrderComplete.route,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
@@ -93,5 +113,30 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             val id = backStackEntry.arguments?.getLong("id") ?: return@composable
             OrderCompleteScreen(navController = navController, orderId = id)
         }
+    }
+}
+
+@Composable
+private fun RequireAuthentication(
+    navController: NavHostController,
+    content: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val authStorage = remember(context) { AuthStorage(context) }
+    val isAuthenticated = authStorage.isAuthenticated()
+
+    LaunchedEffect(isAuthenticated, navController) {
+        if (!isAuthenticated) {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
+    if (isAuthenticated) {
+        content()
+    } else {
+        LoadingScreen()
     }
 }
