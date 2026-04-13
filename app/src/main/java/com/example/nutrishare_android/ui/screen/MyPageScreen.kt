@@ -176,7 +176,7 @@ fun MyPageScreen(
             // 로그아웃
             item {
                 TextButton(
-                    onClick = { authStorage.removeToken(); navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } } },
+                    onClick = { authStorage.clearSession(); navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } } },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("로그아웃", color = MaterialTheme.colorScheme.error) }
             }

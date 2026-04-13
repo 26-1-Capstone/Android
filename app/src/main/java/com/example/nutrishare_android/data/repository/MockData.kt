@@ -3,13 +3,16 @@ package com.example.nutrishare_android.data.repository
 import com.example.nutrishare_android.data.model.Address
 import com.example.nutrishare_android.data.model.CartItem
 import com.example.nutrishare_android.data.model.CartResponse
+import com.example.nutrishare_android.data.model.CreateGroupRequest
 import com.example.nutrishare_android.data.model.CreateOrderRequest
 import com.example.nutrishare_android.data.model.Group
+import com.example.nutrishare_android.data.model.JoinGroupRequest
 import com.example.nutrishare_android.data.model.Order
 import com.example.nutrishare_android.data.model.PageResponse
 import com.example.nutrishare_android.data.model.Participation
 import com.example.nutrishare_android.data.model.Product
 import com.example.nutrishare_android.data.model.ResourceIdResponse
+import com.example.nutrishare_android.data.model.UpdateProfileRequest
 import com.example.nutrishare_android.data.model.User
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -24,91 +27,46 @@ object MockData {
     private val dateTimeFmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     private val products = listOf(
-        Product(
-            id = 1L,
-            name = "Organic Eggs 10 Pack",
-            price = 6900,
-            imageUrl = null,
-            categoryName = "Groceries",
-            stockQuantity = 50,
-            description = "Fresh organic eggs."
-        ),
-        Product(
-            id = 2L,
-            name = "Seasonal Strawberries 500g",
-            price = 9900,
-            imageUrl = null,
-            categoryName = "Fruit",
-            stockQuantity = 30,
-            description = "Sweet strawberries."
-        ),
-        Product(
-            id = 3L,
-            name = "Beef Bulgogi 300g",
-            price = 15900,
-            imageUrl = null,
-            categoryName = "Meat",
-            stockQuantity = 20,
-            description = "Ready-to-cook bulgogi."
-        ),
-        Product(
-            id = 4L,
-            name = "Greek Yogurt 400g",
-            price = 7800,
-            imageUrl = null,
-            categoryName = "Dairy",
-            stockQuantity = 40,
-            description = "Plain greek yogurt."
-        )
+        Product(1L, "Organic Eggs 10 Pack", 6900, null, "Groceries", 50, "Fresh organic eggs."),
+        Product(2L, "Seasonal Strawberries 500g", 9900, null, "Fruit", 30, "Sweet strawberries."),
+        Product(3L, "Beef Bulgogi 300g", 15900, null, "Meat", 20, "Ready-to-cook bulgogi."),
+        Product(4L, "Greek Yogurt 400g", 7800, null, "Dairy", 40, "Plain greek yogurt.")
     )
 
-    private val groups = listOf(
-        Group(
-            id = 101L,
-            title = "Strawberry Group Buy",
-            productName = "Seasonal Strawberries 500g",
-            typePrice = 7900,
-            targetQuantity = 10,
-            currentQuantity = 6,
-            dueDate = LocalDateTime.now().plusDays(2).format(dateTimeFmt),
-            status = "OPEN"
-        ),
-        Group(
-            id = 102L,
-            title = "Bulgogi Group Buy",
-            productName = "Beef Bulgogi 300g",
-            typePrice = 12900,
-            targetQuantity = 8,
-            currentQuantity = 8,
-            dueDate = LocalDateTime.now().minusDays(1).format(dateTimeFmt),
-            status = "CLOSED"
-        )
+    private val groups = mutableListOf(
+        Group(101L, "Strawberry Group Buy", "Seasonal Strawberries 500g", 7900, 10, 6, LocalDateTime.now().plusDays(2).format(dateTimeFmt), "OPEN"),
+        Group(102L, "Bulgogi Group Buy", "Beef Bulgogi 300g", 12900, 8, 8, LocalDateTime.now().minusDays(1).format(dateTimeFmt), "CLOSED")
     )
 
     private val cartItems = mutableListOf(
-        CartItem(
-            productId = 1L,
-            productName = "Organic Eggs 10 Pack",
-            typePrice = 6900,
-            quantity = 1,
-            totalPrice = 6900
-        ),
-        CartItem(
-            productId = 2L,
-            productName = "Seasonal Strawberries 500g",
-            typePrice = 9900,
-            quantity = 2,
-            totalPrice = 19800
-        )
+        CartItem(1L, "Organic Eggs 10 Pack", 6900, 1, 6900),
+        CartItem(2L, "Seasonal Strawberries 500g", 9900, 2, 19800)
     )
 
     private val myOrdersList = mutableListOf(
-        Order(
-            orderId = 501L,
-            summary = "Organic Eggs 10 Pack x1",
-            totalAmount = 26800,
-            status = "PAID",
-            orderDate = LocalDateTime.now().minusDays(3).format(dateTimeFmt)
+        Order(501L, "Organic Eggs 10 Pack x1", 26800, "PAID", LocalDateTime.now().minusDays(3).format(dateTimeFmt))
+    )
+
+    private var myProfile = User(
+        nickname = "Test User",
+        email = "test@example.com",
+        profileImageUrl = null,
+        totalSavings = 125000,
+        address = Address(
+            zipCode = "06236",
+            addressLine1 = "123 Teheran-ro, Gangnam-gu",
+            addressLine2 = "101-1001"
+        )
+    )
+
+    private val myParticipationsList = mutableListOf(
+        Participation(
+            groupPurchaseId = 101L,
+            title = "Strawberry Group Buy",
+            productName = "Seasonal Strawberries 500g",
+            currentQuantity = 6,
+            targetQuantity = 10,
+            status = "OPEN"
         )
     )
 
@@ -233,40 +191,80 @@ object MockData {
         return Result.success(group)
     }
 
-    fun myProfile(): Result<User> {
-        return Result.success(
-            User(
-                nickname = "Test User",
-                email = "test@example.com",
-                profileImageUrl = null,
-                totalSavings = 125000,
-                address = Address(
-                    zipCode = "06236",
-                    addressLine1 = "123 Teheran-ro, Gangnam-gu",
-                    addressLine2 = "101-1001"
-                )
+    fun createGroup(request: CreateGroupRequest): Result<Unit> {
+        val product = products.find { it.id == request.productId }
+        val newGroup = Group(
+            id = Random.nextLong(1000, 9999),
+            title = request.title,
+            productName = product?.name ?: "Custom Product",
+            typePrice = request.unitPrice,
+            targetQuantity = request.targetQuantity,
+            currentQuantity = 1,
+            dueDate = request.endAt,
+            status = "OPEN"
+        )
+        groups.add(0, newGroup)
+        myParticipationsList.add(
+            0,
+            Participation(
+                groupPurchaseId = newGroup.id,
+                title = newGroup.title,
+                productName = newGroup.productName,
+                currentQuantity = newGroup.currentQuantity,
+                targetQuantity = newGroup.targetQuantity,
+                status = newGroup.status
             )
         )
+        return Result.success(Unit)
     }
 
-    fun myOrders(): Result<List<Order>> = Result.success(myOrdersList.toList())
+    fun joinGroup(id: Long, request: JoinGroupRequest): Result<Unit> {
+        val index = groups.indexOfFirst { it.id == id }
+        if (index < 0) {
+            return Result.failure(IllegalArgumentException("Group not found: $id"))
+        }
+
+        val group = groups[index]
+        val nextQuantity = group.currentQuantity + request.quantity
+        val nextStatus = if (nextQuantity >= group.targetQuantity) "CLOSED" else group.status
+        val updated = group.copy(currentQuantity = nextQuantity, status = nextStatus)
+        groups[index] = updated
+
+        val participationIndex = myParticipationsList.indexOfFirst { it.groupPurchaseId == id }
+        val participation = Participation(
+            groupPurchaseId = updated.id,
+            title = updated.title,
+            productName = updated.productName,
+            currentQuantity = updated.currentQuantity,
+            targetQuantity = updated.targetQuantity,
+            status = updated.status
+        )
+        if (participationIndex >= 0) {
+            myParticipationsList[participationIndex] = participation
+        } else {
+            myParticipationsList.add(0, participation)
+        }
+
+        return Result.success(Unit)
+    }
+
+    fun myProfile(): Result<User> = Result.success(myProfile)
+
+    fun updateMyProfile(request: UpdateProfileRequest): Result<Unit> {
+        myProfile = myProfile.copy(
+            nickname = request.nickname,
+            address = Address(
+                zipCode = request.zipCode,
+                addressLine1 = request.addressLine1,
+                addressLine2 = request.addressLine2
+            )
+        )
+        return Result.success(Unit)
+    }
 
     fun currentMyOrders(): Result<List<Order>> = Result.success(myOrdersList.toList())
 
-    fun myParticipations(): Result<List<Participation>> {
-        return Result.success(
-            listOf(
-                Participation(
-                    groupPurchaseId = 101L,
-                    title = "Strawberry Group Buy",
-                    productName = "Seasonal Strawberries 500g",
-                    currentQuantity = 6,
-                    targetQuantity = 10,
-                    status = "OPEN"
-                )
-            )
-        )
-    }
+    fun myParticipations(): Result<List<Participation>> = Result.success(myParticipationsList.toList())
 
     fun token(): Result<String> = Result.success("mock-token")
     fun unit(): Result<Unit> = Result.success(Unit)

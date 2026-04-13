@@ -119,14 +119,14 @@ class NutriRepositoryImpl @Inject constructor(
 
     override suspend fun createGroup(request: CreateGroupRequest): Result<Unit> {
         return withMock(
-            mock = { MockData.unit() },
+            mock = { MockData.createGroup(request) },
             apiCall = { api.createGroup(request).toUnitResult() }
         )
     }
 
     override suspend fun joinGroup(id: Long, request: JoinGroupRequest): Result<Unit> {
         return withMock(
-            mock = { MockData.unit() },
+            mock = { MockData.joinGroup(id, request) },
             apiCall = { api.joinGroup(id, request).toUnitResult() }
         )
     }
@@ -140,7 +140,7 @@ class NutriRepositoryImpl @Inject constructor(
 
     override suspend fun updateMyProfile(request: UpdateProfileRequest): Result<Unit> {
         return withMock(
-            mock = { MockData.unit() },
+            mock = { MockData.updateMyProfile(request) },
             apiCall = { api.updateMyProfile(request).toUnitResult() }
         )
     }
