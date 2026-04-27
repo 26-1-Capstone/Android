@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.teamshimson.nutrishare"
+        applicationId = "com.example.nutrishare_android"
         minSdk = 34
         targetSdk = 36
         versionCode = 1

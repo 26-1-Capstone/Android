@@ -2,7 +2,6 @@ package com.example.nutrishare_android.navigation
 
 // frontend App.jsx의 Route path들과 1:1 대응
 sealed class Screen(val route: String) {
-    object Splash : Screen("splash")
     object Login : Screen("login")
     object Home : Screen("home")
     object Search : Screen("search")

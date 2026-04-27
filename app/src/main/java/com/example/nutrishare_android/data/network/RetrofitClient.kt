@@ -1,92 +1,92 @@
 package com.example.nutrishare_android.data.network
 
 import android.content.Context
-import android.webkit.CookieManager
 import com.example.nutrishare_android.data.local.AuthStorage
-import com.example.nutrishare_android.data.model.ApiResponse
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
+// frontend api.js:
+//   baseURL = VITE_API_BASE_URL || '/api/v1'
+//   요청 인터셉터: Authorization: Bearer {token}
+//   응답 인터셉터: 401 → /api/v1/auth/reissue → 재시도
+
 object RetrofitClient {
 
+    // baseURL은 frontend와 동일하게 /api/v1 경로 기준
+    // 에뮬레이터에서 로컬 서버 접근 시 10.0.2.2 사용
+    // 실기기나 실서버 사용 시 실제 도메인으로 교체
+    private const val BASE_URL = "http://3.36.139.67/api/v1/"
+
     private lateinit var authStorage: AuthStorage
-    private lateinit var cookieManager: CookieManager
     private var isRefreshing = false
-    private val gson = Gson()
-    private val tokenResponseType = object : TypeToken<ApiResponse<String>>() {}.type
 
     fun init(context: Context) {
         authStorage = AuthStorage(context)
-        cookieManager = CookieManager.getInstance().apply {
-            setAcceptCookie(true)
-            flush()
-        }
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private val authInterceptor = Interceptor { chain ->
+    // 요청 인터셉터: Authorization: Bearer {token} 자동 부착 (frontend api.js와 동일)
+    private val authInterceptor = okhttp3.Interceptor { chain ->
         val originalRequest = chain.request()
         val token = authStorage.getToken()
 
-        val request = if (token.isNullOrBlank()) {
-            originalRequest
-        } else {
+        val request = if (token != null) {
             originalRequest.newBuilder()
                 .header("Authorization", "Bearer $token")
                 .build()
+        } else {
+            originalRequest
         }
 
         val response = chain.proceed(request)
-        if (response.code != 401 || isRefreshing || token.isNullOrBlank()) {
-            return@Interceptor response
-        }
 
-        isRefreshing = true
-
-        try {
-            val refreshRequest = originalRequest.newBuilder()
-                .url("${NetworkConfig.API_BASE_URL}auth/reissue")
-                .post(ByteArray(0).toRequestBody(null))
-                .header("Authorization", "Bearer $token")
-                .build()
-
-            val refreshResponse = chain.proceed(refreshRequest)
-            val newToken = refreshResponse.body?.string()
-                ?.let { body -> gson.fromJson<ApiResponse<String>>(body, tokenResponseType) }
-                ?.data
-
-            if (refreshResponse.isSuccessful && !newToken.isNullOrBlank()) {
-                authStorage.setToken(newToken)
-                refreshResponse.close()
-                response.close()
-                return@Interceptor chain.proceed(
+        // 401 응답 시 토큰 재발급 후 재시도 (frontend api.js 응답 인터셉터와 동일)
+        if (response.code == 401 && !isRefreshing) {
+            response.close()
+            isRefreshing = true
+            try {
+                val refreshResponse = chain.proceed(
                     originalRequest.newBuilder()
-                        .header("Authorization", "Bearer $newToken")
+                        .url("${BASE_URL}auth/reissue")
+                        .post(okhttp3.RequestBody.create(null, ByteArray(0)))
+                        .header("Authorization", "Bearer $token")
                         .build()
                 )
-            }
 
-            refreshResponse.close()
-            authStorage.removeToken()
-            response
-        } finally {
-            isRefreshing = false
+                if (refreshResponse.isSuccessful) {
+                    val newToken = refreshResponse.body?.string()
+                        ?.let { com.google.gson.Gson().fromJson(it, com.example.nutrishare_android.data.model.ApiResponse::class.java) }
+                        ?.data as? String
+
+                    if (newToken != null) {
+                        authStorage.setToken(newToken)
+                        refreshResponse.close()
+                        // 새 토큰으로 원본 요청 재시도
+                        return@Interceptor chain.proceed(
+                            originalRequest.newBuilder()
+                                .header("Authorization", "Bearer $newToken")
+                                .build()
+                        )
+                    }
+                }
+                refreshResponse.close()
+                authStorage.removeToken()
+            } finally {
+                isRefreshing = false
+            }
         }
+
+        response
     }
 
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .cookieJar(WebViewCookieJar(cookieManager))
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -96,7 +96,7 @@ object RetrofitClient {
 
     val instance: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(NetworkConfig.API_BASE_URL)
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

@@ -24,15 +24,11 @@ import com.example.nutrishare_android.ui.screen.OrderCompleteScreen
 import com.example.nutrishare_android.ui.screen.ProductDetailScreen
 import com.example.nutrishare_android.ui.screen.ProfileEditScreen
 import com.example.nutrishare_android.ui.screen.SearchScreen
-import com.example.nutrishare_android.ui.screen.SplashScreen
 import com.example.nutrishare_android.ui.viewmodel.CheckoutItem
 
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String) {
     NavHost(navController = navController, startDestination = startDestination) {
-        composable(Screen.Splash.route) {
-            SplashScreen(navController = navController)
-        }
         composable(Screen.Login.route) {
             LoginScreen(navController = navController)
         }
@@ -127,10 +123,10 @@ private fun RequireAuthentication(
 ) {
     val context = LocalContext.current
     val authStorage = remember(context) { AuthStorage(context) }
-    val canAccess = authStorage.isAuthenticated() || authStorage.isGuestMode()
+    val isAuthenticated = authStorage.isAuthenticated()
 
-    LaunchedEffect(canAccess, navController) {
-        if (!canAccess) {
+    LaunchedEffect(isAuthenticated, navController) {
+        if (!isAuthenticated) {
             navController.navigate(Screen.Login.route) {
                 popUpTo(0) { inclusive = true }
                 launchSingleTop = true
@@ -138,7 +134,7 @@ private fun RequireAuthentication(
         }
     }
 
-    if (canAccess) {
+    if (isAuthenticated) {
         content()
     } else {
         LoadingScreen()

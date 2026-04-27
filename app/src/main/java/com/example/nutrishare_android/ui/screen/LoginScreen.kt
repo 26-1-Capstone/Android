@@ -1,62 +1,29 @@
 package com.example.nutrishare_android.ui.screen
 
-import android.annotation.SuppressLint
-import android.net.Uri
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.webkit.CookieManager
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.nutrishare_android.data.network.NetworkConfig
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.viewmodel.LoginViewModel
 
+// frontend: LoginPage.jsx
 @Composable
 fun LoginScreen(navController: NavController) {
     val viewModel: LoginViewModel = hiltViewModel()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
-    val isAuthenticated by viewModel.isAuthenticated.collectAsStateWithLifecycle()
-    val kakaoLoginUrl = remember(viewModel) { viewModel.getKakaoLoginUrl() }
-    var showWebView by rememberSaveable { mutableStateOf(false) }
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
 
+    // 이미 로그인된 경우 홈으로 이동
     LaunchedEffect(isAuthenticated) {
         if (isAuthenticated) {
             navController.navigate(Screen.Home.route) {
@@ -65,23 +32,8 @@ fun LoginScreen(navController: NavController) {
         }
     }
 
-    BackHandler(enabled = showWebView) {
-        showWebView = false
-    }
-
-    if (showWebView) {
-        KakaoLoginWebView(
-            loginUrl = kakaoLoginUrl,
-            onAccessTokenReceived = { accessToken ->
-                showWebView = false
-                viewModel.completeKakaoLogin(accessToken)
-            },
-            onError = { message ->
-                showWebView = false
-                viewModel.setError(message)
-            }
-        )
-        return
+    fun handleOAuthLogin(provider: String) {
+        viewModel.loginWithDev(provider)
     }
 
     Box(
@@ -95,6 +47,7 @@ fun LoginScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // 로고
             Text(
                 text = "NutriShare",
                 style = MaterialTheme.typography.displaySmall,
@@ -102,7 +55,7 @@ fun LoginScreen(navController: NavController) {
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "합리적인 신선 식재료 공동구매",
+                text = "우리 동네 신선 식재료 공동구매",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
@@ -110,45 +63,30 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(40.dp))
 
+            // 혜택 안내
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("신선", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "엄선한 상품만 공동구매로 더 합리하게",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text("대형마트 상품을 우리 동네에서 신선하게", style = MaterialTheme.typography.bodyMedium)
                     }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("절약", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "배송과 유통 비용을 줄여 더 가볍게 주문",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text("배송과 유통비 절감으로 배송비 0원", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // 카카오 로그인 버튼
             Button(
-                onClick = { showWebView = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                onClick = { handleOAuthLogin("kakao") },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondary,
@@ -157,124 +95,36 @@ fun LoginScreen(navController: NavController) {
                 enabled = !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onSecondary)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
                 } else {
-                    Text("카카오 로그인", fontWeight = FontWeight.SemiBold)
+                    Text("카카오로 3초만에 시작하기", fontWeight = FontWeight.SemiBold)
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // 구글 로그인 버튼
             OutlinedButton(
-                onClick = {
-                    viewModel.startGuestMode()
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                onClick = { handleOAuthLogin("google") },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 enabled = !isLoading
             ) {
-                Text("비회원으로 앱 둘러보기", fontWeight = FontWeight.SemiBold)
+                Text("Google 계정으로 로그인", fontWeight = FontWeight.SemiBold)
             }
 
             errorMessage?.let {
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-private fun KakaoLoginWebView(
-    loginUrl: String,
-    onAccessTokenReceived: (String) -> Unit,
-    onError: (String) -> Unit
-) {
-    val context = LocalContext.current
-
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = {
-            val webView = WebView(context)
-            webView.layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-            webView.settings.javaScriptEnabled = true
-            webView.settings.domStorageEnabled = true
-            webView.settings.loadsImagesAutomatically = true
-
-            CookieManager.getInstance().apply {
-                setAcceptCookie(true)
-                setAcceptThirdPartyCookies(webView, true)
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
 
-            webView.webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): Boolean {
-                    return handleCallbackUrl(
-                        url = request?.url?.toString().orEmpty(),
-                        onAccessTokenReceived = onAccessTokenReceived,
-                        onError = onError
-                    )
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    handleCallbackUrl(
-                        url = url.orEmpty(),
-                        onAccessTokenReceived = onAccessTokenReceived,
-                        onError = onError
-                    )
-                }
-            }
-
-            webView.loadUrl(loginUrl)
-            webView
-        }
-    )
-}
-
-private fun handleCallbackUrl(
-    url: String,
-    onAccessTokenReceived: (String) -> Unit,
-    onError: (String) -> Unit
-): Boolean {
-    if (url.isBlank()) {
-        return false
-    }
-
-    val uri = Uri.parse(url)
-    if (uri.path != NetworkConfig.LOGIN_CALLBACK_PATH) {
-        return false
-    }
-
-    val accessToken = uri.getQueryParameter("accessToken")
-    val error = uri.getQueryParameter("error")
-
-    return when {
-        !accessToken.isNullOrBlank() -> {
-            onAccessTokenReceived(accessToken)
-            true
-        }
-
-        !error.isNullOrBlank() -> {
-            onError("카카오 로그인에 실패했습니다: $error")
-            true
-        }
-
-        else -> {
-            onError("로그인 콜백에서 액세스 토큰을 찾지 못했습니다.")
-            true
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "로그인하면 NutriShare 이용약관 및 개인정보처리방침에 동의하게 됩니다.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

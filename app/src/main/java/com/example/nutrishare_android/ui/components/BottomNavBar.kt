@@ -56,8 +56,7 @@ fun BottomNavBar(navController: NavController, authStorage: AuthStorage) {
                 NavigationBarItem(
                     selected = isSelected,
                     onClick = {
-                        val canAccess = authStorage.isAuthenticated() || authStorage.isGuestMode()
-                        val target = if (item.requireAuth && !canAccess) {
+                        val target = if (item.requireAuth && !authStorage.isAuthenticated()) {
                             Screen.Login.route
                         } else {
                             item.screen.route

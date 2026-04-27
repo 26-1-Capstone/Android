@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutrishare_android.data.local.AuthStorage
 import com.example.nutrishare_android.data.repository.AuthRepository
-import com.example.nutrishare_android.data.repository.MockDataConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,37 +25,23 @@ class LoginViewModel @Inject constructor(
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated
 
-    fun getKakaoLoginUrl(): String = authRepository.getKakaoLoginUrl()
-
-    fun startGuestMode() {
-        authStorage.enableGuestMode()
-        MockDataConfig.forceMock = true
-        _errorMessage.value = null
-    }
-
-    fun completeKakaoLogin(accessToken: String) {
+    fun loginWithDev(provider: String) {
+        // provider is reserved for future OAuth implementation
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
             try {
-                authStorage.disableGuestMode()
-                MockDataConfig.forceMock = false
-                authRepository.completeOAuthLogin(accessToken)
-                    .onSuccess {
+                authRepository.devLogin()
+                    .onSuccess { token ->
+                        authStorage.setToken(token)
                         _isAuthenticated.value = true
                     }
-                    .onFailure {
-                        _errorMessage.value = "카카오 로그인을 완료하지 못했습니다."
-                    }
+                    .onFailure { _errorMessage.value = "로그인에 실패했습니다." }
             } catch (e: Exception) {
                 _errorMessage.value = "로그인 오류: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-
-    fun setError(message: String) {
-        _errorMessage.value = message
     }
 }
