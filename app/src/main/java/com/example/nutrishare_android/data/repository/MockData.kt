@@ -20,7 +20,6 @@ import kotlin.random.Random
 
 object MockDataConfig {
     @Volatile var forceMock: Boolean = false
-    @Volatile var fallbackToMockOnError: Boolean = true
 }
 
 object MockData {
@@ -265,6 +264,8 @@ object MockData {
     fun currentMyOrders(): Result<List<Order>> = Result.success(myOrdersList.toList())
 
     fun myParticipations(): Result<List<Participation>> = Result.success(myParticipationsList.toList())
+
+    fun deleteMyAccount(): Result<Unit> = Result.success(Unit)
 
     fun token(): Result<String> = Result.success("mock-token")
     fun unit(): Result<Unit> = Result.success(Unit)

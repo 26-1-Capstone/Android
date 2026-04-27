@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.nutrishare_android.BuildConfig
 import com.example.nutrishare_android.data.model.CreateOrderRequest
 import com.example.nutrishare_android.data.model.OrderItem
 import com.example.nutrishare_android.data.model.ShippingAddress
@@ -35,12 +36,11 @@ class CheckoutViewModel @Inject constructor(
     val toastMessage: StateFlow<String?> = _toastMessage
 
     init {
-        // Restore checkout items from SavedStateHandle when available
         viewModelScope.launch {
             savedStateHandle.getStateFlow<List<CheckoutItem>>("checkoutItems", emptyList())
                 .collect { items ->
                     if (items.isNotEmpty()) {
-                        Log.d("CheckoutLog", "Loaded checkout items: ${items.size}")
+                        debugLog("Loaded checkout items: ${items.size}")
                         _checkoutItems.value = items
                         _isLoading.value = false
                     }
@@ -51,7 +51,7 @@ class CheckoutViewModel @Inject constructor(
     fun setCheckoutItems(items: List<CheckoutItem>) {
         _checkoutItems.value = items
         _isLoading.value = false
-        Log.d("CheckoutLog", "Checkout items set: ${items.size}")
+        debugLog("Checkout items set: ${items.size}")
     }
 
     fun initData(productId: Long?, quantity: Int) {
@@ -64,9 +64,9 @@ class CheckoutViewModel @Inject constructor(
             loadSingleProduct(productId, quantity)
         } else {
             viewModelScope.launch {
-                kotlinx.coroutines.delay(1500) // wait up to 1.5s
+                kotlinx.coroutines.delay(1500)
                 if (_checkoutItems.value.isEmpty()) {
-                    Log.d("CheckoutLog", "Checkout items missing; stop loading")
+                    debugLog("Checkout items missing; stop loading")
                     _isLoading.value = false
                 }
             }
@@ -78,19 +78,21 @@ class CheckoutViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 repository.getProductDetail(productId)
-                    .onSuccess { p ->
+                    .onSuccess { product ->
                         _checkoutItems.value = listOf(
                             CheckoutItem(
-                                productId = p.id,
-                                productName = p.name,
-                                unitPrice = p.price.toLong(),
+                                productId = product.id,
+                                productName = product.name,
+                                unitPrice = product.price,
                                 quantity = quantity
                             )
                         )
                     }
-                    .onFailure { _toastMessage.value = "상품 정보를 불러오지 못했습니다." }
+                    .onFailure {
+                        _toastMessage.value = "Could not load product details."
+                    }
             } catch (e: Exception) {
-                _toastMessage.value = "오류 발생: ${e.message}"
+                _toastMessage.value = "Unexpected error: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -103,9 +105,10 @@ class CheckoutViewModel @Inject constructor(
         onSuccess: (Long) -> Unit
     ) {
         if (address.zipcode.isBlank()) {
-            _toastMessage.value = "배송지를 먼저 입력해주세요."
+            _toastMessage.value = "Please enter the shipping address first."
             return
         }
+
         viewModelScope.launch {
             _isSubmitting.value = true
             try {
@@ -126,17 +129,30 @@ class CheckoutViewModel @Inject constructor(
                 )
                 repository.createOrder(payload)
                     .onSuccess { onSuccess(it.resourceId) }
-                    .onFailure { _toastMessage.value = "결제에 실패했습니다." }
+                    .onFailure {
+                        _toastMessage.value = "Payment failed."
+                    }
             } catch (e: Exception) {
-                _toastMessage.value = "결제 오류: ${e.message}"
+                _toastMessage.value = "Payment error: ${e.message}"
             } finally {
                 _isSubmitting.value = false
             }
         }
     }
 
-    fun showToast(msg: String) { _toastMessage.value = msg }
-    fun clearToast() { _toastMessage.value = null }
+    fun showToast(message: String) {
+        _toastMessage.value = message
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
+    }
+
+    private fun debugLog(message: String) {
+        if (BuildConfig.DEBUG) {
+            Log.d("CheckoutLog", message)
+        }
+    }
 }
 
 @Parcelize

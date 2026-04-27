@@ -1,5 +1,6 @@
 package com.example.nutrishare_android.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutrishare_android.data.local.AuthStorage
@@ -33,6 +34,7 @@ class MainViewModel @Inject constructor(
     private fun validateToken() {
         viewModelScope.launch {
             if (authStorage.isGuestMode()) {
+                Log.d("LoginFlow", "validateToken guest mode detected")
                 authStorage.clearSession()
                 MockDataConfig.forceMock = false
                 _authState.value = AuthState(
@@ -44,18 +46,22 @@ class MainViewModel @Inject constructor(
             }
 
             if (!authStorage.isAuthenticated()) {
+                Log.d("LoginFlow", "validateToken no access token")
                 MockDataConfig.forceMock = false
                 _authState.value = AuthState(isLoading = false, isAuthenticated = false, isGuestMode = false)
                 return@launch
             }
 
+            Log.d("LoginFlow", "validateToken trying reissue")
             MockDataConfig.forceMock = false
             authRepository.reissueToken()
                 .onSuccess { token ->
+                    Log.d("LoginFlow", "reissueToken success tokenLength=${token.length}")
                     authStorage.setToken(token)
                     _authState.value = AuthState(isLoading = false, isAuthenticated = true, isGuestMode = false)
                 }
-                .onFailure {
+                .onFailure { throwable ->
+                    Log.e("LoginFlow", "reissueToken failed", throwable)
                     authStorage.clearSession()
                     _authState.value = AuthState(isLoading = false, isAuthenticated = false, isGuestMode = false)
                 }

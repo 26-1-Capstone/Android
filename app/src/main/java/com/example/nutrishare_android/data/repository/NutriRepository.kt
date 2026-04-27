@@ -36,4 +36,5 @@ interface NutriRepository {
     suspend fun updateMyProfile(request: UpdateProfileRequest): Result<Unit>
     suspend fun getMyOrders(): Result<List<Order>>
     suspend fun getMyParticipations(): Result<List<Participation>>
+    suspend fun deleteMyAccount(): Result<Unit>
 }

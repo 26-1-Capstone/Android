@@ -10,6 +10,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.nutrishare_android.BuildConfig
 import com.example.nutrishare_android.data.local.AuthStorage
 import com.example.nutrishare_android.ui.components.LoadingScreen
 import com.example.nutrishare_android.ui.screen.CartScreen
@@ -80,10 +81,12 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
             val quantity = backStackEntry.arguments?.getInt("quantity") ?: 1
 
             val itemsInHandle = backStackEntry.savedStateHandle.get<List<CheckoutItem>>("checkoutItems")
-            android.util.Log.d(
-                "CheckoutLog",
-                "NavGraph checkoutItems size: ${itemsInHandle?.size ?: "null"}"
-            )
+            if (BuildConfig.DEBUG) {
+                android.util.Log.d(
+                    "CheckoutLog",
+                    "NavGraph checkoutItems size: ${itemsInHandle?.size ?: "null"}"
+                )
+            }
 
             RequireAuthentication(navController = navController) {
                 CheckoutScreen(

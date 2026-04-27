@@ -1,5 +1,6 @@
 package com.example.nutrishare_android.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutrishare_android.data.local.AuthStorage
@@ -39,16 +40,20 @@ class LoginViewModel @Inject constructor(
             _isLoading.value = true
             _errorMessage.value = null
             try {
+                Log.d("LoginFlow", "completeKakaoLogin tokenLength=${accessToken.length}")
                 authStorage.disableGuestMode()
                 MockDataConfig.forceMock = false
                 authRepository.completeOAuthLogin(accessToken)
                     .onSuccess {
+                        Log.d("LoginFlow", "completeOAuthLogin success")
                         _isAuthenticated.value = true
                     }
                     .onFailure {
+                        Log.e("LoginFlow", "completeOAuthLogin failure")
                         _errorMessage.value = "카카오 로그인을 완료하지 못했습니다."
                     }
             } catch (e: Exception) {
+                Log.e("LoginFlow", "completeKakaoLogin exception", e)
                 _errorMessage.value = "로그인 오류: ${e.message}"
             } finally {
                 _isLoading.value = false
@@ -57,6 +62,7 @@ class LoginViewModel @Inject constructor(
     }
 
     fun setError(message: String) {
+        Log.e("LoginFlow", "setError=$message")
         _errorMessage.value = message
     }
 }
