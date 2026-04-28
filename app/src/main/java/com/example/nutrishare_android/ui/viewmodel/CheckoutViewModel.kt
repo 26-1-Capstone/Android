@@ -10,6 +10,7 @@ import com.example.nutrishare_android.data.model.CreateOrderRequest
 import com.example.nutrishare_android.data.model.OrderItem
 import com.example.nutrishare_android.data.model.ShippingAddress
 import com.example.nutrishare_android.data.repository.NutriRepository
+import com.example.nutrishare_android.ui.components.AddressData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.parcelize.Parcelize
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,10 +90,10 @@ class CheckoutViewModel @Inject constructor(
                         )
                     }
                     .onFailure {
-                        _toastMessage.value = "Could not load product details."
+                        _toastMessage.value = "상품 정보를 불러오지 못했습니다."
                     }
             } catch (e: Exception) {
-                _toastMessage.value = "Unexpected error: ${e.message}"
+                _toastMessage.value = "예상치 못한 오류가 발생했습니다: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -101,11 +102,11 @@ class CheckoutViewModel @Inject constructor(
 
     fun submitOrder(
         checkoutItems: List<CheckoutItem>,
-        address: com.example.nutrishare_android.ui.components.AddressData,
+        address: AddressData,
         onSuccess: (Long) -> Unit
     ) {
         if (address.zipcode.isBlank()) {
-            _toastMessage.value = "Please enter the shipping address first."
+            _toastMessage.value = "배송지를 먼저 입력해 주세요."
             return
         }
 
@@ -130,13 +131,38 @@ class CheckoutViewModel @Inject constructor(
                 repository.createOrder(payload)
                     .onSuccess { onSuccess(it.resourceId) }
                     .onFailure {
-                        _toastMessage.value = "Payment failed."
+                        _toastMessage.value = "결제에 실패했습니다."
                     }
             } catch (e: Exception) {
-                _toastMessage.value = "Payment error: ${e.message}"
+                _toastMessage.value = "결제 오류: ${e.message}"
             } finally {
                 _isSubmitting.value = false
             }
+        }
+    }
+
+    fun loadSavedAddress(onLoaded: (AddressData) -> Unit) {
+        viewModelScope.launch {
+            repository.getMyProfile()
+                .onSuccess { profile ->
+                    val address = profile.address
+                    if (address == null || address.zipCode.isNullOrBlank() || address.addressLine1.isNullOrBlank()) {
+                        _toastMessage.value = "저장된 배송지가 없습니다."
+                        return@onSuccess
+                    }
+
+                    onLoaded(
+                        AddressData(
+                            zipcode = address.zipCode,
+                            basicAddress = address.addressLine1,
+                            detailAddress = address.addressLine2.orEmpty()
+                        )
+                    )
+                    _toastMessage.value = "저장된 배송지를 불러왔습니다."
+                }
+                .onFailure {
+                    _toastMessage.value = "저장된 배송지를 불러오지 못했습니다."
+                }
         }
     }
 

@@ -360,6 +360,14 @@ private fun isLoginCallback(uri: Uri): Boolean {
         return false
     }
 
+    val hasOAuthResult =
+        !uri.getQueryParameter("accessToken").isNullOrBlank() ||
+            !uri.getQueryParameter("error").isNullOrBlank()
+
+    if (hasOAuthResult) {
+        return true
+    }
+
     val hostBase = Uri.parse(NetworkConfig.HOST_BASE_URL)
     val sameServerHost = uri.host == hostBase.host
     val sameServerScheme = uri.scheme == hostBase.scheme

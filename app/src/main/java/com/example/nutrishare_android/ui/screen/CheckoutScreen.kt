@@ -86,7 +86,7 @@ fun CheckoutScreen(
         AppScaffold(
             navController = navController,
             context = context,
-            titleHeader = "Checkout",
+            titleHeader = "주문하기",
             showBack = true,
             showBottomBar = false
         ) { innerPadding ->
@@ -96,10 +96,10 @@ fun CheckoutScreen(
                     .fillMaxSize()
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text("No items to order.", style = MaterialTheme.typography.bodyLarge)
+                    Text("주문할 상품이 없습니다.", style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(16.dp))
                     OutlinedButton(onClick = { navController.navigateUp() }) {
-                        Text("Go back")
+                        Text("돌아가기")
                     }
                 }
             }
@@ -110,7 +110,7 @@ fun CheckoutScreen(
     AppScaffold(
         navController = navController,
         context = context,
-        titleHeader = "Checkout",
+        titleHeader = "주문하기",
         showBack = true,
         showCart = false,
         showSearch = false,
@@ -124,7 +124,7 @@ fun CheckoutScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Text("Items", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("주문 상품", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 Card {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -135,7 +135,7 @@ fun CheckoutScreen(
                             ) {
                                 Text("${item.productName} x ${item.quantity}", modifier = Modifier.weight(1f))
                                 Text(
-                                    "${NumberFormat.getNumberInstance(Locale.KOREA).format(item.unitPrice * item.quantity)} KRW",
+                                    "${NumberFormat.getNumberInstance(Locale.KOREA).format(item.unitPrice * item.quantity)}원",
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -145,18 +145,30 @@ fun CheckoutScreen(
             }
 
             item {
-                Text("Shipping", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("배송지", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 AddressForm(
+                    initialData = savedAddress ?: AddressData(),
                     onSubmit = { address ->
                         savedAddress = address
-                        viewModel.showToast("Shipping address confirmed.")
+                        viewModel.showToast("배송지가 확인되었습니다.")
+                    },
+                    onAddressChange = { address ->
+                        savedAddress = address
+                    },
+                    submitLabel = "배송지 확인",
+                    addressActionLabel = "저장된 배송지 불러오기",
+                    onAddressAction = { _, updateAddress ->
+                        viewModel.loadSavedAddress { address ->
+                            updateAddress(address)
+                            savedAddress = address
+                        }
                     }
                 )
             }
 
             item {
-                Text("Summary", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("결제 요약", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 Card {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -164,16 +176,16 @@ fun CheckoutScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Items total")
-                            Text("${NumberFormat.getNumberInstance(Locale.KOREA).format(totalAmount)} KRW")
+                            Text("상품 금액")
+                            Text("${NumberFormat.getNumberInstance(Locale.KOREA).format(totalAmount)}원")
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Shipping fee")
+                            Text("배송비")
                             Text(
-                                "Free",
+                                "무료",
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -183,9 +195,9 @@ fun CheckoutScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Final total", fontWeight = FontWeight.Bold)
+                            Text("최종 결제 금액", fontWeight = FontWeight.Bold)
                             Text(
-                                "${NumberFormat.getNumberInstance(Locale.KOREA).format(totalAmount)} KRW",
+                                "${NumberFormat.getNumberInstance(Locale.KOREA).format(totalAmount)}원",
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -198,7 +210,7 @@ fun CheckoutScreen(
                 Button(
                     onClick = {
                         val address = savedAddress ?: run {
-                            viewModel.showToast("Please confirm the shipping address first.")
+                            viewModel.showToast("배송지를 먼저 확인해 주세요.")
                             return@Button
                         }
                         viewModel.submitOrder(checkoutItems, address) { orderId ->
@@ -214,9 +226,9 @@ fun CheckoutScreen(
                 ) {
                     Text(
                         if (isSubmitting) {
-                            "Processing..."
+                            "처리 중..."
                         } else {
-                            "Pay ${NumberFormat.getNumberInstance(Locale.KOREA).format(totalAmount)} KRW"
+                            "${NumberFormat.getNumberInstance(Locale.KOREA).format(totalAmount)}원 결제하기"
                         },
                         fontWeight = FontWeight.Bold
                     )

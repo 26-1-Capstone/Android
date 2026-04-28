@@ -8,10 +8,6 @@ fun NavController.navigateToTopLevel(route: String) {
     val isCurrentDestination = currentDestination?.hierarchy?.any { it.route == route } == true
     if (isCurrentDestination) return
 
-    if (popBackStack(route, inclusive = false, saveState = true)) {
-        return
-    }
-
     navigate(route) {
         launchSingleTop = true
         restoreState = true

@@ -79,7 +79,7 @@ class MyPageViewModel @Inject constructor(
                     onSuccess()
                 }
                 .onFailure {
-                    _toastMessage.value = "Account deletion failed. Please check server support."
+                    _toastMessage.value = "회원 탈퇴에 실패했습니다. 서버 지원 여부를 확인해 주세요."
                 }
             _isDeletingAccount.value = false
         }
@@ -143,14 +143,14 @@ class ProfileEditViewModel @Inject constructor(
                 )
                 repository.updateMyProfile(request)
                     .onSuccess {
-                        _toastMessage.value = "Profile saved."
+                        _toastMessage.value = "프로필이 저장되었습니다."
                         onSuccess()
                     }
                     .onFailure {
-                        _toastMessage.value = "Save failed."
+                        _toastMessage.value = "저장에 실패했습니다."
                     }
             } catch (e: Exception) {
-                _toastMessage.value = "Save failed: ${e.message}"
+                _toastMessage.value = "저장에 실패했습니다: ${e.message}"
             } finally {
                 _isSaving.value = false
             }

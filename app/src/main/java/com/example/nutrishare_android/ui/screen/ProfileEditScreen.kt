@@ -79,18 +79,18 @@ fun ProfileEditScreen(
             Text("공동구매 결제 시 식료품을 편하게 받아보실 배송지를 등록해 주세요.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
             AddressForm(
                 initialData = savedAddress ?: AddressData(),
-                onSubmit = { addr -> savedAddress = addr },
-                submitLabel = "배송지 저장"
+                onSubmit = { addr ->
+                    savedAddress = addr
+                    viewModel.save(nickname, addr) {
+                        savedAddress = addr
+                    }
+                },
+                onAddressChange = { addr ->
+                    savedAddress = addr
+                },
+                submitLabel = "배송지 저장",
+                isSubmitting = isSaving
             )
-
-            Divider()
-
-            // 회원 탈퇴
-            Text("회원 탈퇴", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-            Text("탈퇴 시 참여 중인 공동구매 내역이 모두 취소됩니다.", style = MaterialTheme.typography.bodySmall)
-            OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                Text("탈퇴하기")
-            }
         }
     }
 

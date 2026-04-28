@@ -90,7 +90,7 @@ fun MyPageScreen(
     AppScaffold(
         navController = navController,
         context = context,
-        titleHeader = "My Page",
+        titleHeader = "마이페이지",
         showSearch = false,
         showCart = false
     ) { innerPadding ->
@@ -120,7 +120,7 @@ fun MyPageScreen(
                         ) {
                             AsyncImage(
                                 model = user.profileImageUrl ?: "https://via.placeholder.com/80",
-                                contentDescription = "Profile image",
+                                contentDescription = "프로필 이미지",
                                 modifier = Modifier
                                     .size(72.dp)
                                     .clip(CircleShape)
@@ -138,7 +138,7 @@ fun MyPageScreen(
                                 )
                             }
                             OutlinedButton(onClick = { navController.navigate(Screen.ProfileEdit.route) }) {
-                                Text("Edit")
+                                Text("수정")
                             }
                         }
                         Spacer(Modifier.height(16.dp))
@@ -151,14 +151,14 @@ fun MyPageScreen(
                                     .fillMaxWidth()
                                     .padding(16.dp)
                             ) {
-                                Text("Savings summary", style = MaterialTheme.typography.bodySmall)
+                                Text("절약 금액", style = MaterialTheme.typography.bodySmall)
                                 Text(
-                                    text = "${NumberFormat.getNumberInstance(Locale.KOREA).format(user.totalSavings ?: 0)} KRW",
+                                    text = "${NumberFormat.getNumberInstance(Locale.KOREA).format(user.totalSavings ?: 0)}원",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
-                                Text("Based on the current server response.", style = MaterialTheme.typography.bodySmall)
+                                Text("현재 서버 응답 기준으로 계산됩니다.", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -181,10 +181,10 @@ fun MyPageScreen(
                     }
                 ) {
                     Tab(selected = activeTab == "orders", onClick = { activeTab = "orders" }) {
-                        Text("Orders", modifier = Modifier.padding(vertical = 12.dp))
+                        Text("주문 내역", modifier = Modifier.padding(vertical = 12.dp))
                     }
                     Tab(selected = activeTab == "groups", onClick = { activeTab = "groups" }) {
-                        Text("Groups", modifier = Modifier.padding(vertical = 12.dp))
+                        Text("참여한 공동구매", modifier = Modifier.padding(vertical = 12.dp))
                     }
                 }
             }
@@ -193,7 +193,7 @@ fun MyPageScreen(
                 if (orders.isEmpty()) {
                     item {
                         Text(
-                            text = "No orders yet.",
+                            text = "아직 주문 내역이 없습니다.",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(16.dp)
                         )
@@ -211,35 +211,30 @@ fun MyPageScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = order.orderDate.substringBefore("T"),
+                                        text = order.orderDate?.substringBefore("T").takeUnless { it.isNullOrBlank() }
+                                            ?: "주문일 정보 없음",
                                         style = MaterialTheme.typography.bodySmall
                                     )
-                                    StatusBadge(order.status)
+                                    StatusBadge(order.status ?: "")
                                 }
                                 Spacer(Modifier.height(8.dp))
-                                Text(order.summary, fontWeight = FontWeight.SemiBold)
+                                Text(order.summary ?: "주문 상품 정보 없음", fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    text = "${NumberFormat.getNumberInstance(Locale.KOREA).format(order.totalAmount)} KRW",
+                                    text = "${NumberFormat.getNumberInstance(Locale.KOREA).format(order.totalAmount ?: 0)}원",
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    horizontalArrangement = Arrangement.Start,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Order ID: ${order.orderId}",
+                                        text = "주문 번호: ${order.orderId}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                     )
-                                    OutlinedButton(
-                                        onClick = {},
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("Details", style = MaterialTheme.typography.bodySmall)
-                                    }
                                 }
                             }
                         }
@@ -249,7 +244,7 @@ fun MyPageScreen(
                 if (participations.isEmpty()) {
                     item {
                         Text(
-                            text = "No joined groups yet.",
+                            text = "아직 참여한 공동구매가 없습니다.",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(16.dp)
                         )
@@ -280,7 +275,7 @@ fun MyPageScreen(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
                                 Text(
-                                    text = "Progress: ${group.currentQuantity} / ${group.targetQuantity}",
+                                    text = "진행 수량: ${group.currentQuantity} / ${group.targetQuantity}",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -301,7 +296,7 @@ fun MyPageScreen(
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                         border = ButtonDefaults.outlinedButtonBorder
                     ) {
-                        Text(if (isDeletingAccount) "Deleting account..." else "Delete account")
+                        Text(if (isDeletingAccount) "탈퇴 처리 중..." else "회원 탈퇴")
                     }
                     TextButton(
                         onClick = {
@@ -312,7 +307,7 @@ fun MyPageScreen(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Logout", color = MaterialTheme.colorScheme.error)
+                        Text("로그아웃", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -326,8 +321,8 @@ fun MyPageScreen(
                     showDeleteDialog = false
                 }
             },
-            title = { Text("Delete account") },
-            text = { Text("Are you sure you want to delete your account? This action may be hard to recover.") },
+            title = { Text("회원 탈퇴") },
+            text = { Text("정말 회원 탈퇴를 진행하시겠습니까? 탈퇴 후에는 계정 복구가 어려울 수 있습니다.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -341,7 +336,7 @@ fun MyPageScreen(
                     enabled = !isDeletingAccount,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(if (isDeletingAccount) "Processing..." else "Delete")
+                    Text(if (isDeletingAccount) "처리 중..." else "탈퇴")
                 }
             },
             dismissButton = {
@@ -349,7 +344,7 @@ fun MyPageScreen(
                     onClick = { showDeleteDialog = false },
                     enabled = !isDeletingAccount
                 ) {
-                    Text("Cancel")
+                    Text("취소")
                 }
             }
         )

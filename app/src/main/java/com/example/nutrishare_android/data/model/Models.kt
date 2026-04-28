@@ -55,11 +55,11 @@ data class CartResponse(
 // ─── 주문 ───
 data class Order(
     val orderId: Long,
-    val summary: String,
-    val totalAmount: Long,
-    val status: String,
-    @SerializedName("createdAt")
-    val orderDate: String
+    val summary: String?,
+    val totalAmount: Long?,
+    val status: String?,
+    @SerializedName("orderDate")
+    val orderDate: String?
 )
 
 data class ShippingAddress(
