@@ -27,16 +27,7 @@ class NutriRepositoryImpl @Inject constructor(
         apiCall: suspend () -> Result<T>
     ): Result<T> {
         if (MockDataConfig.forceMock) return mock()
-        return try {
-            val apiResult = apiCall()
-            if (apiResult.isSuccess || !MockDataConfig.fallbackToMockOnError) {
-                apiResult
-            } else {
-                mock()
-            }
-        } catch (e: Exception) {
-            if (MockDataConfig.fallbackToMockOnError) mock() else Result.failure(e)
-        }
+        return apiCall()
     }
 
     override suspend fun getProducts(size: Int, page: Int): Result<PageResponse<Product>> {
@@ -156,6 +147,13 @@ class NutriRepositoryImpl @Inject constructor(
         return withMock(
             mock = { MockData.myParticipations() },
             apiCall = { api.getMyParticipations().toResult() }
+        )
+    }
+
+    override suspend fun deleteMyAccount(): Result<Unit> {
+        return withMock(
+            mock = { MockData.deleteMyAccount() },
+            apiCall = { api.deleteMyAccount().toUnitResult() }
         )
     }
 }

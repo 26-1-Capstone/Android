@@ -81,4 +81,7 @@ interface ApiService {
 
     @GET("users/me/participations")
     suspend fun getMyParticipations(): Response<ApiResponse<List<Participation>>>
+
+    @DELETE("users/me")
+    suspend fun deleteMyAccount(): Response<ApiResponse<Unit>>
 }

@@ -1,10 +1,15 @@
 package com.example.nutrishare_android.ui.screen
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Log
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.CookieManager
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
@@ -102,7 +107,7 @@ fun LoginScreen(navController: NavController) {
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "합리적인 신선 식재료 공동구매",
+                text = "신선 식재료 공동구매",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
@@ -125,7 +130,7 @@ fun LoginScreen(navController: NavController) {
                     ) {
                         Text("신선", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "엄선한 상품만 공동구매로 더 합리하게",
+                            "신선한 상품을 함께 구매하고 합리적으로 즐겨보세요.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -135,7 +140,7 @@ fun LoginScreen(navController: NavController) {
                     ) {
                         Text("절약", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "배송과 유통 비용을 줄여 더 가볍게 주문",
+                            "배송과 유통 비용을 줄여 더 가볍게 주문하세요.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -159,7 +164,7 @@ fun LoginScreen(navController: NavController) {
                 if (isLoading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onSecondary)
                 } else {
-                    Text("카카오 로그인", fontWeight = FontWeight.SemiBold)
+                    Text("카카오로 로그인", fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -178,7 +183,7 @@ fun LoginScreen(navController: NavController) {
                 shape = RoundedCornerShape(12.dp),
                 enabled = !isLoading
             ) {
-                Text("비회원으로 앱 둘러보기", fontWeight = FontWeight.SemiBold)
+                Text("비회원으로 둘러보기", fontWeight = FontWeight.SemiBold)
             }
 
             errorMessage?.let {
@@ -212,29 +217,92 @@ private fun KakaoLoginWebView(
             webView.settings.domStorageEnabled = true
             webView.settings.loadsImagesAutomatically = true
 
+            Log.d("LoginWebView", "loadUrl=$loginUrl")
+
             CookieManager.getInstance().apply {
                 setAcceptCookie(true)
                 setAcceptThirdPartyCookies(webView, true)
             }
 
+            webView.webChromeClient = object : WebChromeClient() {
+                override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                    Log.d("LoginWebView", "progress=$newProgress currentUrl=${view?.url}")
+                }
+
+                override fun onReceivedTitle(view: WebView?, title: String?) {
+                    Log.d("LoginWebView", "title=$title currentUrl=${view?.url}")
+                }
+            }
+
             webView.webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                    Log.d("LoginWebView", "shouldOverrideUrlLoading(String)=$url")
+                    return interceptCallback(
+                        view = view,
+                        url = url.orEmpty(),
+                        onAccessTokenReceived = onAccessTokenReceived,
+                        onError = onError
+                    )
+                }
+
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    return handleCallbackUrl(
+                    Log.d("LoginWebView", "shouldOverrideUrlLoading(Request)=${request?.url}")
+                    return interceptCallback(
+                        view = view,
                         url = request?.url?.toString().orEmpty(),
                         onAccessTokenReceived = onAccessTokenReceived,
                         onError = onError
                     )
                 }
 
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    handleCallbackUrl(
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    Log.d("LoginWebView", "onPageStarted=$url")
+                    interceptCallback(
+                        view = view,
                         url = url.orEmpty(),
                         onAccessTokenReceived = onAccessTokenReceived,
                         onError = onError
                     )
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    Log.d("LoginWebView", "onPageFinished=$url")
+                    interceptCallback(
+                        view = view,
+                        url = url.orEmpty(),
+                        onAccessTokenReceived = onAccessTokenReceived,
+                        onError = onError
+                    )
+                }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        Log.e(
+                            "LoginWebView",
+                            "onReceivedError url=${request.url} code=${error?.errorCode} desc=${error?.description}"
+                        )
+                        onError("로그인 페이지를 불러오지 못했습니다.")
+                    }
+                }
+
+                override fun onReceivedHttpError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    errorResponse: WebResourceResponse?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        Log.e(
+                            "LoginWebView",
+                            "onReceivedHttpError url=${request.url} status=${errorResponse?.statusCode} reason=${errorResponse?.reasonPhrase}"
+                        )
+                    }
                 }
             }
 
@@ -244,7 +312,8 @@ private fun KakaoLoginWebView(
     )
 }
 
-private fun handleCallbackUrl(
+private fun interceptCallback(
+    view: WebView?,
     url: String,
     onAccessTokenReceived: (String) -> Unit,
     onError: (String) -> Unit
@@ -254,27 +323,55 @@ private fun handleCallbackUrl(
     }
 
     val uri = Uri.parse(url)
-    if (uri.path != NetworkConfig.LOGIN_CALLBACK_PATH) {
+    if (!isLoginCallback(uri)) {
         return false
     }
+
+    Log.d("LoginWebView", "interceptCallback hit=$url")
+    view?.stopLoading()
 
     val accessToken = uri.getQueryParameter("accessToken")
     val error = uri.getQueryParameter("error")
 
     return when {
         !accessToken.isNullOrBlank() -> {
+            Log.d("LoginWebView", "accessToken length=${accessToken.length}")
             onAccessTokenReceived(accessToken)
             true
         }
 
         !error.isNullOrBlank() -> {
+            Log.e("LoginWebView", "callback error=$error")
             onError("카카오 로그인에 실패했습니다: $error")
             true
         }
 
         else -> {
+            Log.e("LoginWebView", "callback missing token and error url=$url")
             onError("로그인 콜백에서 액세스 토큰을 찾지 못했습니다.")
             true
         }
     }
+}
+
+private fun isLoginCallback(uri: Uri): Boolean {
+    val path = uri.path ?: return false
+    if (path != NetworkConfig.LOGIN_CALLBACK_PATH) {
+        return false
+    }
+
+    val hasOAuthResult =
+        !uri.getQueryParameter("accessToken").isNullOrBlank() ||
+            !uri.getQueryParameter("error").isNullOrBlank()
+
+    if (hasOAuthResult) {
+        return true
+    }
+
+    val hostBase = Uri.parse(NetworkConfig.HOST_BASE_URL)
+    val sameServerHost = uri.host == hostBase.host
+    val sameServerScheme = uri.scheme == hostBase.scheme
+    val noHost = uri.host.isNullOrBlank()
+
+    return (sameServerHost && sameServerScheme) || noHost
 }

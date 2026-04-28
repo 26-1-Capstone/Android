@@ -2,6 +2,7 @@ package com.example.nutrishare_android.data.network
 
 import android.content.Context
 import android.webkit.CookieManager
+import com.example.nutrishare_android.BuildConfig
 import com.example.nutrishare_android.data.local.AuthStorage
 import com.example.nutrishare_android.data.model.ApiResponse
 import com.google.gson.Gson
@@ -31,7 +32,11 @@ object RetrofitClient {
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     private val authInterceptor = Interceptor { chain ->
