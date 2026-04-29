@@ -1,12 +1,42 @@
 package com.example.nutrishare_android.ui.screen
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,14 +50,15 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.nutrishare_android.data.local.AuthStorage
 import com.example.nutrishare_android.navigation.Screen
-import com.example.nutrishare_android.ui.components.*
+import com.example.nutrishare_android.ui.components.AppScaffold
+import com.example.nutrishare_android.ui.components.LoadingScreen
+import com.example.nutrishare_android.ui.components.StatusBadge
 import com.example.nutrishare_android.ui.viewmodel.MyPageViewModel
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.Locale
 
-// frontend: MyPage.jsx
 @Composable
 fun MyPageScreen(
     navController: NavController,
@@ -39,8 +70,10 @@ fun MyPageScreen(
     val orders by viewModel.orders.collectAsStateWithLifecycle()
     val participations by viewModel.participations.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isDeletingAccount by viewModel.isDeletingAccount.collectAsStateWithLifecycle()
+    val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
     var activeTab by remember { mutableStateOf("orders") }
-    val authStorage = remember { AuthStorage(context) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -54,47 +87,84 @@ fun MyPageScreen(
         }
     }
 
-    AppScaffold(navController = navController, context = context, titleHeader = "마이페이지", showSearch = false, showCart = false) { innerPadding ->
-        if (isLoading) { LoadingScreen(); return@AppScaffold }
-        val p = profile ?: return@AppScaffold
+    AppScaffold(
+        navController = navController,
+        context = context,
+        titleHeader = "마이페이지",
+        showSearch = false,
+        showCart = false
+    ) { innerPadding ->
+        if (isLoading) {
+            LoadingScreen()
+            return@AppScaffold
+        }
+
+        val user = profile ?: return@AppScaffold
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 프로필 헤더
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = ButtonDefaults.outlinedButtonBorder
                 ) {
                     Column(Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
                             AsyncImage(
-                                model = p.profileImageUrl ?: "https://via.placeholder.com/80",
-                                contentDescription = "프로필",
-                                modifier = Modifier.size(72.dp).clip(CircleShape)
+                                model = user.profileImageUrl ?: "https://via.placeholder.com/80",
+                                contentDescription = "프로필 이미지",
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
                             )
                             Column(Modifier.weight(1f)) {
-                                Text("${p.nickname}님", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text(p.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text(
+                                    text = user.nickname,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = user.email,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
                             }
-                            OutlinedButton(onClick = { navController.navigate(Screen.ProfileEdit.route) }) { Text("수정") }
+                            OutlinedButton(onClick = { navController.navigate(Screen.ProfileEdit.route) }) {
+                                Text("수정")
+                            }
                         }
                         Spacer(Modifier.height(16.dp))
-                        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium) {
-                            Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                                Text("이번 달 공동구매로 절약한 금액", style = MaterialTheme.typography.bodySmall)
-                                Text("${NumberFormat.getNumberInstance(Locale.KOREA).format(p.totalSavings ?: 0)}원", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
-                                Text("혼자 샀을 때보다 훨씬 이득이에요!", style = MaterialTheme.typography.bodySmall)
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Text("절약 금액", style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    text = "${NumberFormat.getNumberInstance(Locale.KOREA).format(user.totalSavings ?: 0)}원",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text("현재 서버 응답 기준으로 계산됩니다.", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
                 }
             }
 
-            // 탭 전환
             item {
                 TabRow(
                     selectedTabIndex = if (activeTab == "orders") 0 else 1,
@@ -103,9 +173,9 @@ fun MyPageScreen(
                     divider = {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
                     },
-                    indicator = { tabPositions ->
+                    indicator = { positions ->
                         TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[if (activeTab == "orders") 0 else 1]),
+                            modifier = Modifier.tabIndicatorOffset(positions[if (activeTab == "orders") 0 else 1]),
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -119,10 +189,15 @@ fun MyPageScreen(
                 }
             }
 
-            // 탭 콘텐츠
             if (activeTab == "orders") {
                 if (orders.isEmpty()) {
-                    item { Text("주문 내역이 없습니다.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
+                    item {
+                        Text(
+                            text = "아직 주문 내역이 없습니다.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 } else {
                     items(orders) { order ->
                         Card(
@@ -130,21 +205,36 @@ fun MyPageScreen(
                             border = ButtonDefaults.outlinedButtonBorder
                         ) {
                             Column(Modifier.padding(16.dp)) {
-                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                    val displayDate = order.orderDate?.substringBefore("T") ?: "날짜 없음"
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        text = displayDate,
+                                        text = order.orderDate?.substringBefore("T").takeUnless { it.isNullOrBlank() }
+                                            ?: "주문일 정보 없음",
                                         style = MaterialTheme.typography.bodySmall
                                     )
-                                    StatusBadge(order.status)
+                                    StatusBadge(order.status ?: "")
                                 }
                                 Spacer(Modifier.height(8.dp))
-                                Text(order.summary ?: "주문 정보 없음", fontWeight = FontWeight.SemiBold)
-                                Text("${NumberFormat.getNumberInstance(Locale.KOREA).format(order.totalAmount)}원", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                Text(order.summary ?: "주문 상품 정보 없음", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = "${NumberFormat.getNumberInstance(Locale.KOREA).format(order.totalAmount ?: 0)}원",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
                                 Spacer(Modifier.height(8.dp))
-                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                    Text("주문번호: ${order.orderId}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
-                                    OutlinedButton(onClick = {}, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) { Text("상세 보기", style = MaterialTheme.typography.bodySmall) }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "주문 번호: ${order.orderId}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    )
                                 }
                             }
                         }
@@ -152,7 +242,13 @@ fun MyPageScreen(
                 }
             } else {
                 if (participations.isEmpty()) {
-                    item { Text("참여 내역이 없습니다.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp)) }
+                    item {
+                        Text(
+                            text = "아직 참여한 공동구매가 없습니다.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 } else {
                     items(participations) { group ->
                         Card(
@@ -161,24 +257,107 @@ fun MyPageScreen(
                             border = ButtonDefaults.outlinedButtonBorder
                         ) {
                             Column(Modifier.padding(16.dp)) {
-                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                    Text(group.title?: "", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                                    StatusBadge(group.status?: "")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = group.title ?: "",
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    StatusBadge(group.status ?: "")
                                 }
-                                Text(group.productName?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
-                                Text("모집 상태: ${group.currentQuantity} / ${group.targetQuantity}명", style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    text = group.productName ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    text = "진행 수량: ${group.currentQuantity} / ${group.targetQuantity}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
                     }
                 }
             }
 
-            // 로그아웃
             item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isDeletingAccount,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        border = ButtonDefaults.outlinedButtonBorder
+                    ) {
+                        Text(if (isDeletingAccount) "탈퇴 처리 중..." else "회원 탈퇴")
+                    }
+                    TextButton(
+                        onClick = {
+                            viewModel.logout()
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("로그아웃", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isDeletingAccount) {
+                    showDeleteDialog = false
+                }
+            },
+            title = { Text("회원 탈퇴") },
+            text = { Text("정말 회원 탈퇴를 진행하시겠습니까? 탈퇴 후에는 계정 복구가 어려울 수 있습니다.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteAccount {
+                            showDeleteDialog = false
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    },
+                    enabled = !isDeletingAccount,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(if (isDeletingAccount) "처리 중..." else "탈퇴")
+                }
+            },
+            dismissButton = {
                 TextButton(
-                    onClick = { authStorage.removeToken(); navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } } },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("로그아웃", color = MaterialTheme.colorScheme.error) }
+                    onClick = { showDeleteDialog = false },
+                    enabled = !isDeletingAccount
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+
+    toastMessage?.let { message ->
+        LaunchedEffect(message) {
+            delay(3000)
+            viewModel.clearToast()
+        }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            Snackbar(Modifier.padding(16.dp)) {
+                Text(message)
             }
         }
     }

@@ -75,9 +75,12 @@ class GroupDetailViewModel @Inject constructor(
     fun loadGroup(id: Long) {
         viewModelScope.launch {
             _isLoading.value = true
+            _isParticipating.value = false
             try {
-                repository.getGroupDetail(id)
-                    .onSuccess { _group.value = it }
+                repository.getGroupDetail(id).onSuccess { _group.value = it }
+                repository.getMyParticipations().onSuccess { participations ->
+                    _isParticipating.value = participations.any { it.groupPurchaseId == id }
+                }
             } catch (e: Exception) { } finally { _isLoading.value = false }
         }
     }
@@ -89,6 +92,7 @@ class GroupDetailViewModel @Inject constructor(
                 repository.joinGroup(id, JoinGroupRequest(quantity = 1))
                     .onSuccess {
                         _toastMessage.value = "공동구매에 참여했습니다! 인원이 다 차면 결제가 진행됩니다."
+                        repository.getGroupDetail(id).onSuccess { _group.value = it }
                     }
                     .onFailure {
                         _isParticipating.value = false

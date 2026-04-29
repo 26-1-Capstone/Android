@@ -2,6 +2,7 @@ package com.example.nutrishare_android.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.nutrishare_android.data.local.AuthStorage
 import com.example.nutrishare_android.data.model.Order
 import com.example.nutrishare_android.data.model.Participation
 import com.example.nutrishare_android.data.model.User
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MyPageViewModel @Inject constructor(
-    private val repository: NutriRepository
+    private val repository: NutriRepository,
+    private val authStorage: AuthStorage
 ) : ViewModel() {
     private val _profile = MutableStateFlow<User?>(null)
     val profile: StateFlow<User?> = _profile
@@ -28,7 +30,15 @@ class MyPageViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    init { fetchAll() }
+    private val _isDeletingAccount = MutableStateFlow(false)
+    val isDeletingAccount: StateFlow<Boolean> = _isDeletingAccount
+
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage: StateFlow<String?> = _toastMessage
+
+    init {
+        fetchAll()
+    }
 
     fun refreshOnStart() {
         fetchAll()
@@ -44,12 +54,43 @@ class MyPageViewModel @Inject constructor(
                 val ordersJob = launch {
                     repository.getMyOrders().onSuccess { _orders.value = it }
                 }
-                val partJob = launch {
+                val participationsJob = launch {
                     repository.getMyParticipations().onSuccess { _participations.value = it }
                 }
-                profileJob.join(); ordersJob.join(); partJob.join()
-            } catch (e: Exception) { /* ignore */ } finally { _isLoading.value = false }
+                profileJob.join()
+                ordersJob.join()
+                participationsJob.join()
+            } catch (_: Exception) {
+                // Keep the current state when refresh fails.
+            } finally {
+                _isLoading.value = false
+            }
         }
+    }
+
+    fun deleteAccount(onSuccess: () -> Unit) {
+        if (_isDeletingAccount.value) return
+
+        viewModelScope.launch {
+            _isDeletingAccount.value = true
+            repository.deleteMyAccount()
+                .onSuccess {
+                    authStorage.clearSession()
+                    onSuccess()
+                }
+                .onFailure {
+                    _toastMessage.value = "회원 탈퇴에 실패했습니다. 서버 지원 여부를 확인해 주세요."
+                }
+            _isDeletingAccount.value = false
+        }
+    }
+
+    fun logout() {
+        authStorage.clearSession()
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
     }
 }
 
@@ -69,39 +110,54 @@ class ProfileEditViewModel @Inject constructor(
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage: StateFlow<String?> = _toastMessage
 
-    init { fetchProfile() }
+    init {
+        fetchProfile()
+    }
 
     fun fetchProfile() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                repository.getMyProfile()
-                    .onSuccess { _profile.value = it }
-            } catch (e: Exception) { /* ignore */ } finally { _isLoading.value = false }
+                repository.getMyProfile().onSuccess { _profile.value = it }
+            } catch (_: Exception) {
+                // Ignore and keep any previously shown state.
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
-    fun save(nickname: String, address: com.example.nutrishare_android.ui.components.AddressData, onSuccess: () -> Unit) {
+    fun save(
+        nickname: String,
+        address: com.example.nutrishare_android.ui.components.AddressData,
+        onSuccess: () -> Unit
+    ) {
         viewModelScope.launch {
             _isSaving.value = true
             try {
-                val req = com.example.nutrishare_android.data.model.UpdateProfileRequest(
+                val request = com.example.nutrishare_android.data.model.UpdateProfileRequest(
                     nickname = nickname,
                     zipCode = address.zipcode,
                     addressLine1 = address.basicAddress,
                     addressLine2 = address.detailAddress
                 )
-                repository.updateMyProfile(req)
+                repository.updateMyProfile(request)
                     .onSuccess {
-                        _toastMessage.value = "프로필이 성공적으로 수정되었습니다."
+                        _toastMessage.value = "프로필이 저장되었습니다."
                         onSuccess()
                     }
-                    .onFailure { _toastMessage.value = "저장에 실패했습니다." }
+                    .onFailure {
+                        _toastMessage.value = "저장에 실패했습니다."
+                    }
             } catch (e: Exception) {
-                _toastMessage.value = "저장 실패: ${e.message}"
-            } finally { _isSaving.value = false }
+                _toastMessage.value = "저장에 실패했습니다: ${e.message}"
+            } finally {
+                _isSaving.value = false
+            }
         }
     }
 
-    fun clearToast() { _toastMessage.value = null }
+    fun clearToast() {
+        _toastMessage.value = null
+    }
 }

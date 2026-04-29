@@ -13,16 +13,7 @@ class AuthRepositoryImpl @Inject constructor(
         apiCall: suspend () -> Result<T>
     ): Result<T> {
         if (MockDataConfig.forceMock) return mock()
-        return try {
-            val apiResult = apiCall()
-            if (apiResult.isSuccess || !MockDataConfig.fallbackToMockOnError) {
-                apiResult
-            } else {
-                mock()
-            }
-        } catch (e: Exception) {
-            if (MockDataConfig.fallbackToMockOnError) mock() else Result.failure(e)
-        }
+        return apiCall()
     }
 
     override suspend fun devLogin(): Result<String> {

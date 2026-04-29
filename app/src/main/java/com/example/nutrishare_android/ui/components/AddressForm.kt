@@ -17,11 +17,19 @@ data class AddressData(
 fun AddressForm(
     initialData: AddressData = AddressData(),
     onSubmit: (AddressData) -> Unit,
+    onAddressChange: ((AddressData) -> Unit)? = null,
     submitLabel: String = "배송지 저장",
-    isSubmitting: Boolean = false
+    isSubmitting: Boolean = false,
+    addressActionLabel: String = "주소 찾기",
+    onAddressAction: ((currentAddress: AddressData, updateAddress: (AddressData) -> Unit) -> Unit)? = null
 ) {
     var address by remember(initialData) {
         mutableStateOf(initialData)
+    }
+
+    fun updateAddress(newAddress: AddressData) {
+        address = newAddress
+        onAddressChange?.invoke(newAddress)
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -32,22 +40,27 @@ fun AddressForm(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = address.zipcode,
-                    onValueChange = {},
-                    readOnly = true,
+                    onValueChange = { updateAddress(address.copy(zipcode = it)) },
                     placeholder = { Text("00000") },
                     modifier = Modifier.weight(1f),
                     singleLine = true
                 )
                 FilledTonalButton(
                     onClick = {
-                        // 임시: frontend와 동일하게 더미 주소 삽입 (Daum Postcode 연동 필요)
-                        address = address.copy(
-                            zipcode = "06236",
-                            basicAddress = "서울 강남구 테헤란로 152"
-                        )
+                        if (onAddressAction != null) {
+                            onAddressAction(address) { newAddress -> updateAddress(newAddress) }
+                        } else {
+                            // 임시: frontend와 동일하게 더미 주소 삽입 (Daum Postcode 연동 필요)
+                            updateAddress(
+                                address.copy(
+                                    zipcode = "06236",
+                                    basicAddress = "서울 강남구 테헤란로 152"
+                                )
+                            )
+                        }
                     }
                 ) {
-                    Text("주소 찾기")
+                    Text(addressActionLabel)
                 }
             }
         }
@@ -57,8 +70,7 @@ fun AddressForm(
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = address.basicAddress,
-                onValueChange = {},
-                readOnly = true,
+                onValueChange = { updateAddress(address.copy(basicAddress = it)) },
                 placeholder = { Text("주소를 검색해주세요") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -70,7 +82,7 @@ fun AddressForm(
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = address.detailAddress,
-                onValueChange = { address = address.copy(detailAddress = it) },
+                onValueChange = { updateAddress(address.copy(detailAddress = it)) },
                 placeholder = { Text("나머지 상세 주소를 입력해주세요") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
