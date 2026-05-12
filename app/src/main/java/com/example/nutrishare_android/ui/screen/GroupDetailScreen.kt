@@ -58,7 +58,10 @@ fun GroupDetailScreen(
     Scaffold(
         topBar = { AppHeader(navController, showBack = true, showSearch = false) },
         bottomBar = {
-            Surface(shadowElevation = 8.dp) {
+            Surface(
+                modifier = Modifier.navigationBarsPadding(),
+                shadowElevation = 8.dp
+            ) {
                 Button(
                     onClick = { viewModel.participate(groupId) },
                     modifier = Modifier.fillMaxWidth().padding(16.dp).height(52.dp),
@@ -143,7 +146,12 @@ fun GroupDetailScreen(
 
     toastMessage?.let { msg ->
         LaunchedEffect(msg) { kotlinx.coroutines.delay(3000); viewModel.clearToast() }
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .navigationBarsPadding(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
             Snackbar(Modifier.padding(16.dp)) { Text(msg) }
         }
     }
