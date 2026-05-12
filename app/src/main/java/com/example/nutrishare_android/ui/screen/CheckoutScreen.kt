@@ -251,6 +251,15 @@ fun CheckoutScreen(
         ) {
             Snackbar(Modifier.padding(16.dp)) { Text(message) }
         }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
+            Snackbar(Modifier.padding(16.dp)) { Text(message) }
+        }
+    }
+}
+
+private fun debugLog(message: String) {
+    if (BuildConfig.DEBUG) {
+        Log.d("CheckoutLog", message)
     }
 }
 
