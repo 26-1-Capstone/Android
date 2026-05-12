@@ -33,7 +33,9 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp),
-                    shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+                    shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                    productName = product.name,
+                    categoryName = product.categoryName
                 )
                 product.categoryName?.let { category ->
                     Surface(

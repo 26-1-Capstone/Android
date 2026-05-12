@@ -84,6 +84,9 @@ object RetrofitClient {
             refreshResponse.close()
             authStorage.removeToken()
             response
+        } catch (e: Exception) {
+            authStorage.removeToken()
+            response
         } finally {
             isRefreshing = false
         }

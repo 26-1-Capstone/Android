@@ -61,7 +61,11 @@ fun ProductDetailScreen(
         },
         bottomBar = {
             // Fixed Bottom Action Bar (frontend의 .bottom-action-bar와 동일)
-            Surface(shadowElevation = 8.dp, tonalElevation = 4.dp) {
+            Surface(
+                modifier = Modifier.navigationBarsPadding(),
+                shadowElevation = 8.dp,
+                tonalElevation = 4.dp
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -105,7 +109,9 @@ fun ProductDetailScreen(
                 imageUrl = p.imageUrl,
                 contentDescription = p.name,
                 modifier = Modifier.fillMaxWidth().height(280.dp),
-                shape = RectangleShape
+                shape = RectangleShape,
+                productName = p.name,
+                categoryName = p.categoryName
             )
             Column(modifier = Modifier.padding(20.dp)) {
                 p.categoryName?.let { Text(text = it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
@@ -150,7 +156,12 @@ fun ProductDetailScreen(
             kotlinx.coroutines.delay(3000)
             viewModel.clearToast()
         }
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .navigationBarsPadding(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
             Snackbar(modifier = Modifier.padding(16.dp)) { Text(msg) }
         }
     }

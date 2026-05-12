@@ -1,12 +1,26 @@
 package com.example.nutrishare_android.ui.components
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-// frontend: AddressForm.jsx
 data class AddressData(
     val zipcode: String = "",
     val basicAddress: String = "",
@@ -33,38 +47,54 @@ fun AddressForm(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // 우편번호
         Column {
             Text("우편번호", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = address.zipcode,
-                    onValueChange = { updateAddress(address.copy(zipcode = it)) },
-                    placeholder = { Text("00000") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                FilledTonalButton(
-                    onClick = {
-                        if (onAddressAction != null) {
-                            onAddressAction(address) { newAddress -> updateAddress(newAddress) }
-                        } else {
-                            // 임시: frontend와 동일하게 더미 주소 삽입 (Daum Postcode 연동 필요)
-                            updateAddress(
-                                address.copy(
-                                    zipcode = "06236",
-                                    basicAddress = "서울 강남구 테헤란로 152"
+            BoxWithConstraints {
+                val isNarrow = maxWidth < 360.dp
+                val input: @Composable (Modifier) -> Unit = { modifier ->
+                    OutlinedTextField(
+                        value = address.zipcode,
+                        onValueChange = { updateAddress(address.copy(zipcode = it)) },
+                        placeholder = { Text("00000") },
+                        modifier = modifier,
+                        singleLine = true
+                    )
+                }
+                val action: @Composable () -> Unit = {
+                    FilledTonalButton(
+                        onClick = {
+                            if (onAddressAction != null) {
+                                onAddressAction(address) { newAddress -> updateAddress(newAddress) }
+                            } else {
+                                updateAddress(
+                                    address.copy(
+                                        zipcode = "06236",
+                                        basicAddress = "서울 강남구 테헤란로 152"
+                                    )
                                 )
-                            )
-                        }
+                            }
+                        },
+                        modifier = if (isNarrow) Modifier.fillMaxWidth() else Modifier
+                    ) {
+                        Text(addressActionLabel)
                     }
-                ) {
-                    Text(addressActionLabel)
+                }
+
+                if (isNarrow) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        input(Modifier.fillMaxWidth())
+                        action()
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        input(Modifier.weight(1f))
+                        action()
+                    }
                 }
             }
         }
-        // 기본 주소
+
         Column {
             Text("기본 주소", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.height(4.dp))
@@ -76,7 +106,7 @@ fun AddressForm(
                 singleLine = true
             )
         }
-        // 상세 주소
+
         Column {
             Text("상세 주소", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.height(4.dp))

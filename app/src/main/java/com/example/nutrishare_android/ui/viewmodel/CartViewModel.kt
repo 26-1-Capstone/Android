@@ -26,6 +26,9 @@ class CartViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage: StateFlow<String?> = _toastMessage
+
     private var serverCartSnapshot: List<CartItem> = emptyList()
     private var hasPendingChanges = false
     private var hasLoadedOnce = false
@@ -53,9 +56,10 @@ class CartViewModel @Inject constructor(
                         if (!hasLoadedOnce) {
                             applyCartItems(emptyList())
                         }
+                        _toastMessage.value = "장바구니를 불러오지 못했습니다."
                     }
             } catch (e: Exception) {
-                // ignore
+                _toastMessage.value = "장바구니를 불러오지 못했습니다."
             } finally { _isLoading.value = false }
         }
     }
@@ -102,11 +106,17 @@ class CartViewModel @Inject constructor(
                 if (syncSucceeded) {
                     serverCartSnapshot = currentItems.normalized()
                     hasPendingChanges = false
+                } else {
+                    _toastMessage.value = "장바구니 변경사항을 저장하지 못했습니다."
                 }
             } catch (e: Exception) {
-                // ignore
+                _toastMessage.value = "장바구니 변경사항을 저장하지 못했습니다."
             }
         }
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
     }
 
     private fun applyCartItems(items: List<CartItem>) {
