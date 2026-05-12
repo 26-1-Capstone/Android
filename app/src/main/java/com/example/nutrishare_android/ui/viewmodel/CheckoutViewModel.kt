@@ -36,12 +36,15 @@ class CheckoutViewModel @Inject constructor(
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage: StateFlow<String?> = _toastMessage
 
+    private var shouldClearCartAfterOrder = false
+
     init {
         viewModelScope.launch {
             savedStateHandle.getStateFlow<List<CheckoutItem>>("checkoutItems", emptyList())
                 .collect { items ->
                     if (items.isNotEmpty()) {
                         debugLog("Loaded checkout items: ${items.size}")
+                        shouldClearCartAfterOrder = true
                         _checkoutItems.value = items
                         _isLoading.value = false
                     }
@@ -50,6 +53,7 @@ class CheckoutViewModel @Inject constructor(
     }
 
     fun setCheckoutItems(items: List<CheckoutItem>) {
+        shouldClearCartAfterOrder = true
         _checkoutItems.value = items
         _isLoading.value = false
         debugLog("Checkout items set: ${items.size}")
@@ -77,6 +81,7 @@ class CheckoutViewModel @Inject constructor(
     private fun loadSingleProduct(productId: Long, quantity: Int) {
         viewModelScope.launch {
             _isLoading.value = true
+            shouldClearCartAfterOrder = false
             try {
                 repository.getProductDetail(productId)
                     .onSuccess { product ->
@@ -129,7 +134,12 @@ class CheckoutViewModel @Inject constructor(
                     }
                 )
                 repository.createOrder(payload)
-                    .onSuccess { onSuccess(it.resourceId) }
+                    .onSuccess { order ->
+                        if (shouldClearCartAfterOrder) {
+                            clearOrderedCartItems(checkoutItems)
+                        }
+                        onSuccess(order.resourceId)
+                    }
                     .onFailure {
                         _toastMessage.value = "결제에 실패했습니다."
                     }
@@ -164,6 +174,15 @@ class CheckoutViewModel @Inject constructor(
                     _toastMessage.value = "저장된 배송지를 불러오지 못했습니다."
                 }
         }
+    }
+
+    private suspend fun clearOrderedCartItems(items: List<CheckoutItem>) {
+        items.map { it.productId }
+            .distinct()
+            .forEach { productId ->
+                repository.removeCartItem(productId)
+                    .onFailure { debugLog("Failed to remove ordered cart item: $productId") }
+            }
     }
 
     fun showToast(message: String) {

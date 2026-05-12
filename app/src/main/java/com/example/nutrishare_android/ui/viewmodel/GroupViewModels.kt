@@ -155,5 +155,9 @@ class GroupCreateViewModel @Inject constructor(
         }
     }
 
+    fun showToast(message: String) {
+        _toastMessage.value = message
+    }
+
     fun clearToast() { _toastMessage.value = null }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,6 +53,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.nutrishare_android.navigation.Screen
 import com.example.nutrishare_android.ui.components.AppScaffold
+import com.example.nutrishare_android.ui.components.EmptyState
 import com.example.nutrishare_android.ui.components.LoadingScreen
 import com.example.nutrishare_android.ui.components.StatusBadge
 import com.example.nutrishare_android.ui.viewmodel.MyPageViewModel
@@ -99,7 +101,27 @@ fun MyPageScreen(
             return@AppScaffold
         }
 
-        val user = profile ?: return@AppScaffold
+        val user = profile ?: run {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyState(
+                    title = "프로필 정보를 불러오지 못했습니다.",
+                    description = "세션이 만료되었거나 네트워크 요청이 실패했습니다.",
+                    actionLabel = "로그인으로 이동",
+                    onAction = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            return@AppScaffold
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -355,7 +377,12 @@ fun MyPageScreen(
             delay(3000)
             viewModel.clearToast()
         }
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
             Snackbar(Modifier.padding(16.dp)) {
                 Text(message)
             }

@@ -2,9 +2,8 @@ package com.example.nutrishare_android.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -128,9 +127,8 @@ private fun RequireAuthentication(
     navController: NavHostController,
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
-    val authStorage = remember(context) { AuthStorage(context) }
-    val canAccess = authStorage.isAuthenticated() || authStorage.isGuestMode()
+    val sessionState = AuthStorage.sessionState.collectAsStateWithLifecycle().value
+    val canAccess = sessionState.canAccessProtectedRoutes
 
     LaunchedEffect(canAccess, navController) {
         if (!canAccess) {

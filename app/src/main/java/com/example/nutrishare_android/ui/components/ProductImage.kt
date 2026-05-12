@@ -10,25 +10,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import coil.compose.AsyncImage
+import com.example.nutrishare_android.R
 
 @Composable
 fun ProductImage(
     imageUrl: String?,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    shape: Shape
+    shape: Shape,
+    productName: String? = contentDescription,
+    categoryName: String? = null
 ) {
     val normalizedImageUrl = imageUrl?.takeIf { it.isNotBlank() }
+    val localImageRes = localProductImageRes(productName = productName, categoryName = categoryName)
 
-    if (normalizedImageUrl != null) {
+    if (normalizedImageUrl != null || localImageRes != null) {
         AsyncImage(
-            model = normalizedImageUrl,
+            model = normalizedImageUrl ?: localImageRes,
             contentDescription = contentDescription,
             modifier = modifier.clip(shape),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            error = localImageRes?.let { painterResource(it) },
+            placeholder = localImageRes?.let { painterResource(it) }
         )
     } else {
         Box(
@@ -45,5 +52,16 @@ fun ProductImage(
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+private fun localProductImageRes(productName: String?, categoryName: String?): Int? {
+    val key = listOfNotNull(productName, categoryName).joinToString(" ").lowercase()
+    return when {
+        key.contains("딸기") || key.contains("strawberr") -> R.drawable.product_strawberry
+        key.contains("라면") || key.contains("ramen") -> R.drawable.product_ramen
+        key.contains("휴지") || key.contains("tissue") -> R.drawable.product_tissue
+        key.contains("사과") || key.contains("apple") -> R.drawable.product_apple
+        else -> null
     }
 }
